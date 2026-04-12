@@ -1,0 +1,11 @@
+.venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+
+# Output/Model files
+q_table.npy
+*.npy
