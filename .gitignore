@@ -1,11 +1,14 @@
 .venv/
-.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .DS_Store
+.pytest_cache/
+.mypy_cache/
+.coverage
 
 # Output/Model files
 q_table.npy
 *.npy
+dqn_model.pth

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-03-21T19:12:28.279656+04:00 by Eclipse SUMO netedit 1.26.0
-<neteditConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
+<!-- generated on 2026-04-12T20:24:16.934844+04:00 by Eclipse SUMO netconvert 1.26.0
+<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="/Users/macbook/Documents/komitas-vagharshyan/komitas-vagharshyan.net.xml"/>
+        <sumo-net-file value="sumo_data/komitas-vagharshyan.net.xml"/>
     </input>
 
     <output>
-        <output-file value="/Users/macbook/Documents/komitas-vagharshyan/komitas-vagharshyan.net.xml"/>
+        <output-file value="sumo_data/komitas-vagharshyan.net.xml"/>
     </output>
 
     <processing>
@@ -30,7 +30,7 @@
         <walkingareas value="0"/>
     </pedestrian>
 
-</neteditConfiguration>
+</netconvertConfiguration>
 -->
 
 <net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50" avoidOverlap="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
@@ -4117,7 +4117,7 @@
 
     <tlLogic id="cluster_11668441165_11668441166_11668441167_2912634528_#8more" type="static" programID="0" offset="0">
         <phase duration="31" state="rrrGGGGgrrrrrrGGGG" name="komitas full green"/>
-        <phase duration="4"  state="rrrGGGGgrrrrrrryyy"/>
+        <phase duration="4"  state="rrrGGGGgrrrrrryyyy"/>
         <phase duration="6"  state="rrrGGGGGrrrrrrrrrr" name="komitas up green"/>
         <phase duration="4"  state="rrryyyyyrrrrrrrrrr"/>
         <phase duration="31" state="GGGrrrrrGGGgggrrrr" name="vagharshyan green"/>
