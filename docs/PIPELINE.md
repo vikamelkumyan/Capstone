@@ -1,133 +1,161 @@
 # Pipeline
 
-This file explains the end-to-end pipeline from SUMO assets to a trained policy.
+This file explains the current end-to-end workflow from tracked SUMO assets to a trained RL controller and comparison results.
 
-## 1. Static Scenario Assets
+## 1. Scenario Assets
 
-The tracked scenario files live in [sumo_data](/Users/macbook/Documents/komitas-vagharshyan/sumo_data):
+The tracked SUMO assets live under [sumo_data](/Users/macbook/Documents/komitas-vagharshyan/sumo_data):
 
+- `komitas-vagharshyan.net.xml`: network, junction topology, and traffic light logic
+- `komitas-vagharshyan.sumocfg`: SUMO scenario configuration
+- `routes.rou.xml`: active route demand file
 - `komitas-vagharshyan.osm`: raw map source
-- `komitas-vagharshyan.net.xml`: SUMO network with junction logic and traffic-light phases
-- `routes.rou.xml`: active route demand used by training and testing
-- `komitas-vagharshyan.sumocfg`: SUMO configuration file
 
-The Python code runs the scenario described by:
+All main scripts run against:
 
 ```text
 sumo_data/komitas-vagharshyan.sumocfg
 ```
 
-## 2. Route Generation
+## 2. Demand Generation
 
-If traffic demand needs to be regenerated, use [scripts/generate_traffic.py](/Users/macbook/Documents/komitas-vagharshyan/scripts/generate_traffic.py:1).
-
-It builds a route file from:
-
-- a named scenario such as `morning_rush`
-- a deterministic random seed
-- a fixed set of valid source-destination movements
+Traffic demand can be regenerated with [scripts/generate_traffic.py](/Users/macbook/Documents/komitas-vagharshyan/scripts/generate_traffic.py:1).
 
 Example:
 
 ```bash
-./.venv/bin/python scripts/generate_traffic.py --scenario morning_rush --seed 42
+./.venv/bin/python scripts/generate_traffic.py --scenario evening_rush --seed 42 --steps 7200 --output sumo_data/routes.rou.xml
 ```
 
-The output is normally:
+[train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:1) can also generate deterministic route banks under `training_routes/` when training across multiple scenarios.
 
-```text
-sumo_data/routes.rou.xml
-```
+## 3. SUMO Startup
 
-## 3. Environment Initialization
+When training or evaluation starts, the code:
 
-When training or testing begins, the code:
+1. prepares a runnable SUMO config, optionally overriding the route file
+2. rewrites relative SUMO asset paths to absolute paths for temporary configs
+3. starts SUMO through TraCI
+4. identifies the controlled traffic light
+5. builds a phase-to-lane mapping for the valid green phases
 
-1. Starts SUMO through TraCI
-2. Loads the configured network
-3. Finds the target traffic-light system
-4. Builds a mapping from green phases to incoming lanes
-
-That mapping matters because the reward and state depend on lane-level queue information, but the agent chooses actions at the phase level.
+That mapping is important because RL decisions are phase-level, but the traffic measurements come from lanes.
 
 ## 4. State Extraction
 
-At every decision point, the controller extracts:
+At each decision point, the controller builds a 7-feature state:
 
-- current phase demand
-- next phase demand
-- competing phase demand
-- elapsed green time
+- normalized demand for each of the 5 green phases
+- normalized elapsed green time
+- normalized current phase position
 
-This converts raw SUMO measurements into a compact RL state vector.
+This happens in [train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:215).
 
 ## 5. Action Selection
 
 During training:
 
-- the controller uses epsilon-greedy exploration
-- random actions are used early
-- model-based actions dominate later
+- epsilon-greedy exploration is used
+- early episodes explore more
+- later episodes rely more on the DQN
 
-During testing:
+During testing and evaluation:
 
-- the controller always picks the action with the highest Q-value
+- the highest-Q action is chosen greedily
 
-The action is then passed through the rule layer:
+The action space is:
 
-- no switch before `MIN_GREEN`
-- forced switch at `MAX_GREEN`
+- `EXTEND`
+- switch directly to one of the valid green phases
 
-## 6. Environment Transition
+This is decoded in [train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:287).
 
-Once the action is resolved:
+## 6. Transition Handling
 
-- the simulation is advanced by `EXTEND_STEP`
-- or the controller moves through the built-in yellow phase and then into the next green phase
+Before switching from one green phase to another, the controller synthesizes a yellow transition from the current and target green state strings.
 
-After the transition, new queue and waiting-time statistics are measured.
+That transition:
+
+- keeps movements green if they stay active in the target phase
+- sets withdrawn movements to yellow
+- keeps everything else red
+
+Then the controller applies the target green state. This logic lives in [train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:251) and is reused by [evaluate.py](/Users/macbook/Documents/komitas-vagharshyan/evaluate.py:1).
 
 ## 7. Reward And Learning
 
-Training then computes the reward from congestion change and updates the replay buffer.
+After each decision, the code measures:
 
-When enough samples exist:
+- total queue
+- worst-lane queue
+- newly arrived vehicles
+- newly loaded vehicles
 
-1. a minibatch is sampled
-2. target Q-values are computed using the target network
-3. the policy network is optimized with MSE loss
+The reward then favors:
 
-This repeats for every decision in every episode.
+- queue reduction
+- some protection against worst-lane starvation
+- moving vehicles through the network
 
-## 8. Model Output
+and penalizes:
 
-At the end of training, the learned policy network weights are written to:
+- inflow pressure
+- excessive green holding
+- unnecessary switching
+
+Transitions are stored in replay memory, minibatches are sampled, and the DQN is updated against a target network.
+
+## 8. Outputs
+
+Normal training writes:
 
 ```text
 dqn_model.pth
 ```
 
-That file is the only learned artifact needed for inference.
+The checkpoint-based final workflow can also write:
 
-## 9. Evaluation Run
+- periodic checkpoints under `checkpoints/`
+- a final selected model such as `dqn_model_final_v2.pth`
+- ranking summaries under the checkpoint directory
 
-[test_sim.py](/Users/macbook/Documents/komitas-vagharshyan/test_sim.py:9) loads `dqn_model.pth` and runs the trained controller in SUMO.
+## 9. Visual Test
 
-Its purpose is qualitative and debugging-oriented:
+[test_sim.py](/Users/macbook/Documents/komitas-vagharshyan/test_sim.py:1) runs the trained controller in `sumo-gui`.
 
-- it shows the GUI
-- it prints states and Q-values
-- it reveals when rule constraints override the model
+Its role is qualitative:
 
-## 10. Practical Mental Model
+- watch the signal behavior
+- inspect printed Q-values and actions
+- verify the controller is switching sensibly
 
-A useful way to read the pipeline is:
+## 10. Quantitative Evaluation
 
-- SUMO provides traffic dynamics
-- helper logic converts them into a phase-level RL state
-- the DQN proposes extend or switch
-- rule-based timing constraints sanitize that proposal
-- SUMO executes the result
-- the congestion change becomes reward
+[evaluate.py](/Users/macbook/Documents/komitas-vagharshyan/evaluate.py:1) compares:
 
-So the final system is not purely learned and not purely rule-based. It is a hybrid controller with a learned decision layer inside a fixed operational envelope.
+- the default SUMO traffic light controller
+- the trained RL controller
+
+It reports:
+
+- steps to clear the scenario
+- vehicles arrived
+- average queue per step
+- average lane wait per step
+- average trip duration
+- average waiting time
+- average time loss
+- maximum waiting time
+
+## 11. Final-Selection Workflow
+
+[run_final_training.py](/Users/macbook/Documents/komitas-vagharshyan/run_final_training.py:1) automates the full selection loop:
+
+1. train for a fixed number of episodes
+2. save checkpoints periodically
+3. generate evaluation route files
+4. evaluate each checkpoint across those routes
+5. rank checkpoints by average cross-scenario score
+6. write JSON and Markdown summaries
+
+This is the best workflow when you want a final submission model instead of just the last checkpoint.

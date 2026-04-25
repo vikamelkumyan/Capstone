@@ -12,3 +12,8 @@ __pycache__/
 q_table.npy
 *.npy
 dqn_model.pth
+dqn_model_final*.pth
+checkpoints/
+training_routes/
+batch_eval_routes/
+sumo_data/trips.trips.xml

@@ -48,8 +48,10 @@ def generate_route_file(filename, probabilities, seed=42, n_steps=3600):
 
     with output_path.open("w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        f.write('<routes>\n')
-        f.write('    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5.0" maxSpeed="50"/>\n')
+        f.write("<routes>\n")
+        f.write(
+            '    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5.0" maxSpeed="50"/>\n'
+        )
 
         route_map = {}
         for idx, (src, dst) in enumerate(VALID_ROUTES):
@@ -59,24 +61,28 @@ def generate_route_file(filename, probabilities, seed=42, n_steps=3600):
                 route_map[src] = []
             route_map[src].append(route_id)
 
-        f.write('\n')
+        f.write("\n")
 
         veh_id = 0
         for step in range(n_steps):
             for edge, prob in probabilities.items():
                 if edge in route_map and rng.random() < prob:
                     target_route = rng.choice(route_map[edge])
-                    f.write(f'    <vehicle id="v_{veh_id}" type="car" route="{target_route}" depart="{step}"/>\n')
+                    f.write(
+                        f'    <vehicle id="v_{veh_id}" type="car" route="{target_route}" depart="{step}"/>\n'
+                    )
                     veh_id += 1
 
-        f.write('</routes>\n')
+        f.write("</routes>\n")
 
     print(f"Generated {veh_id} vehicles in {filename}")
 
 
 def parse_args():
     """Parse command-line options for traffic generation."""
-    parser = argparse.ArgumentParser(description="Generate SUMO route demand for the intersection.")
+    parser = argparse.ArgumentParser(
+        description="Generate SUMO route demand for the intersection."
+    )
     parser.add_argument(
         "--scenario",
         choices=sorted(SCENARIOS),

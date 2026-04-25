@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from train import GREEN_PHASES, SUMO_CONFIG, TLS_ID
+from train import GREEN_PHASES, SUMO_CONFIG, TLS_ID  # noqa: E402
 
 SUMO_CMD = ["sumo", "-c", SUMO_CONFIG]
 

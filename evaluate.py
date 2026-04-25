@@ -7,26 +7,32 @@ import torch
 import traci
 
 from train import (
+    ACTION_DIM,
+    apply_green_phase,
     DQN,
+    build_transition_state,
+    decode_action,
     EXTEND_STEP,
+    PHASE_TRANSITIONS,
     MAX_GREEN,
     MIN_GREEN,
     MODEL_PATH,
-    SUMO_CONFIG,
+    STATE_DIM,
     TLS_ID,
     YELLOW_DURATION,
+    create_config_with_route_override,
     get_state,
     init_phase_lanes,
 )
 
 
-def build_sumo_cmd(tripinfo_output):
+def build_eval_sumo_cmd(config_path, tripinfo_output):
     """Build a headless SUMO command for evaluation."""
     sumo_binary = os.environ.get("SUMO_EVAL_BINARY", "sumo")
     return [
         sumo_binary,
         "-c",
-        SUMO_CONFIG,
+        config_path,
         "--no-warnings",
         "--quit-on-end",
         "--tripinfo-output",
@@ -66,16 +72,12 @@ def init_metrics():
         "steps": 0,
         "total_queue": 0.0,
         "total_lane_wait": 0.0,
-        "vehicles_loaded": 0,
-        "vehicles_departed": 0,
     }
 
 
 def record_step_metrics(metrics, controlled_lanes):
     """Update per-step queue and waiting-time aggregates."""
     metrics["steps"] += 1
-    metrics["vehicles_loaded"] += traci.simulation.getLoadedNumber()
-    metrics["vehicles_departed"] += traci.simulation.getDepartedNumber()
     metrics["total_queue"] += sum(
         traci.lane.getLastStepHaltingNumber(lane) for lane in controlled_lanes
     )
@@ -91,19 +93,15 @@ def step_with_metrics(seconds, metrics, controlled_lanes):
         record_step_metrics(metrics, controlled_lanes)
 
 
-def get_next_phase(current_phase):
-    """Advance to the next green phase in the fixed cycle."""
-    green_phases = [0, 2, 4, 6]
-    idx = green_phases.index(current_phase)
-    return green_phases[(idx + 1) % len(green_phases)]
-
-
 def switch_phase_with_metrics(current_phase, metrics, controlled_lanes):
-    """Apply the built-in yellow phase and move to the next green phase."""
-    next_phase = get_next_phase(current_phase)
-    traci.trafficlight.setPhase(TLS_ID, current_phase + 1)
-    step_with_metrics(YELLOW_DURATION, metrics, controlled_lanes)
-    traci.trafficlight.setPhase(TLS_ID, next_phase)
+    """Transition to the next green phase using a synthesized yellow phase."""
+    next_phase = PHASE_TRANSITIONS[current_phase]["next_green"]
+    transition_state = build_transition_state(current_phase, next_phase)
+    if transition_state != traci.trafficlight.getRedYellowGreenState(TLS_ID):
+        traci.trafficlight.setRedYellowGreenState(TLS_ID, transition_state)
+        step_with_metrics(YELLOW_DURATION, metrics, controlled_lanes)
+
+    apply_green_phase(next_phase)
     return next_phase
 
 
@@ -111,8 +109,6 @@ def finalize_metrics(metrics, tripinfo_metrics):
     steps = max(metrics["steps"], 1)
     return {
         "steps": metrics["steps"],
-        "vehicles_loaded": metrics["vehicles_loaded"],
-        "vehicles_departed": metrics["vehicles_departed"],
         "arrived_vehicles": tripinfo_metrics["arrived_vehicles"],
         "avg_queue_per_step": metrics["total_queue"] / steps,
         "avg_lane_wait_per_step": metrics["total_lane_wait"] / steps,
@@ -123,82 +119,124 @@ def finalize_metrics(metrics, tripinfo_metrics):
     }
 
 
-def run_default_controller():
+def run_default_controller(route_file=None):
     """Run the scenario with the built-in SUMO traffic light logic."""
     with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as tmp:
         tripinfo_path = tmp.name
 
     metrics = init_metrics()
-    traci.start(build_sumo_cmd(tripinfo_path))
+    config_path, temp_config_path = create_config_with_route_override(route_file)
+    traci.start(build_eval_sumo_cmd(config_path, tripinfo_path))
     try:
-        controlled_lanes = list(set(traci.trafficlight.getControlledLanes(TLS_ID)))
-        while traci.simulation.getMinExpectedNumber() > 0:
-            traci.simulationStep()
-            record_step_metrics(metrics, controlled_lanes)
+        try:
+            controlled_lanes = list(set(traci.trafficlight.getControlledLanes(TLS_ID)))
+            while traci.simulation.getMinExpectedNumber() > 0:
+                traci.simulationStep()
+                record_step_metrics(metrics, controlled_lanes)
+        finally:
+            traci.close()
     finally:
-        traci.close()
+        if temp_config_path:
+            os.unlink(temp_config_path)
 
     tripinfo_metrics = parse_tripinfo(tripinfo_path)
     os.unlink(tripinfo_path)
     return finalize_metrics(metrics, tripinfo_metrics)
 
 
-def load_policy():
+def load_policy(model_path):
     """Load the trained DQN policy from disk."""
-    policy_net = DQN(state_dim=4, action_dim=2)
-    policy_net.load_state_dict(torch.load(MODEL_PATH, map_location="cpu"))
+    policy_net = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM)
+    try:
+        policy_net.load_state_dict(torch.load(model_path, map_location="cpu"))
+    except RuntimeError as exc:
+        raise RuntimeError(
+            "Saved model is incompatible with the current controller architecture. "
+            "Retrain with train.py before running evaluation."
+        ) from exc
     policy_net.eval()
     return policy_net
 
 
-def run_rl_controller():
+def run_rl_controller(model_path=MODEL_PATH, route_file=None):
     """Run the scenario using the trained RL controller."""
     with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as tmp:
         tripinfo_path = tmp.name
 
     metrics = init_metrics()
-    policy_net = load_policy()
+    policy_net = load_policy(model_path)
+    config_path, temp_config_path = create_config_with_route_override(route_file)
 
-    traci.start(build_sumo_cmd(tripinfo_path))
+    traci.start(build_eval_sumo_cmd(config_path, tripinfo_path))
     try:
-        init_phase_lanes()
-        controlled_lanes = list(set(traci.trafficlight.getControlledLanes(TLS_ID)))
-        current_phase = traci.trafficlight.getPhase(TLS_ID)
-        elapsed_green = 0
+        try:
+            init_phase_lanes()
+            controlled_lanes = list(set(traci.trafficlight.getControlledLanes(TLS_ID)))
+            current_phase = traci.trafficlight.getPhase(TLS_ID)
+            elapsed_green = 0
 
-        step_with_metrics(20, metrics, controlled_lanes)
+            step_with_metrics(20, metrics, controlled_lanes)
 
-        while traci.simulation.getMinExpectedNumber() > 0:
-            state = get_state(current_phase, elapsed_green)
-            with torch.no_grad():
-                state_tensor = torch.FloatTensor(state).unsqueeze(0)
-                action = policy_net(state_tensor).argmax().item()
+            while traci.simulation.getMinExpectedNumber() > 0:
+                state = get_state(current_phase, elapsed_green)
+                with torch.no_grad():
+                    state_tensor = torch.FloatTensor(state).unsqueeze(0)
+                    action = policy_net(state_tensor).argmax().item()
 
-            if action == 0:
-                step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
-                elapsed_green += EXTEND_STEP
+                action_info = decode_action(action)
 
-                if elapsed_green >= MAX_GREEN:
-                    current_phase = switch_phase_with_metrics(
-                        current_phase, metrics, controlled_lanes
-                    )
-                    elapsed_green = 0
-            else:
-                if elapsed_green < MIN_GREEN:
+                if action_info["type"] == "extend":
                     step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
                     elapsed_green += EXTEND_STEP
+
+                    if elapsed_green >= MAX_GREEN:
+                        current_phase = switch_phase_with_metrics(
+                            current_phase, metrics, controlled_lanes
+                        )
+                        elapsed_green = 0
                 else:
-                    current_phase = switch_phase_with_metrics(
-                        current_phase, metrics, controlled_lanes
-                    )
-                    elapsed_green = 0
-                    step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
+                    target_phase = action_info["target_phase"]
+                    if target_phase == current_phase:
+                        step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
+                        elapsed_green += EXTEND_STEP
+                    elif elapsed_green < MIN_GREEN:
+                        step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
+                        elapsed_green += EXTEND_STEP
+                    else:
+                        transition_state = build_transition_state(
+                            current_phase, target_phase
+                        )
+                        if (
+                            transition_state
+                            != traci.trafficlight.getRedYellowGreenState(TLS_ID)
+                        ):
+                            traci.trafficlight.setRedYellowGreenState(
+                                TLS_ID, transition_state
+                            )
+                            step_with_metrics(
+                                YELLOW_DURATION, metrics, controlled_lanes
+                            )
+                        apply_green_phase(target_phase)
+                        current_phase = target_phase
+                        elapsed_green = 0
+                        step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
+        finally:
+            traci.close()
     finally:
-        traci.close()
+        if temp_config_path:
+            os.unlink(temp_config_path)
 
     tripinfo_metrics = parse_tripinfo(tripinfo_path)
     os.unlink(tripinfo_path)
     return finalize_metrics(metrics, tripinfo_metrics)
+
+
+def evaluate_pair(model_path=MODEL_PATH, route_file=None):
+    """Run baseline and RL evaluation on the same scenario."""
+    return {
+        "baseline": run_default_controller(route_file=route_file),
+        "rl": run_rl_controller(model_path=model_path, route_file=route_file),
+    }
 
 
 def print_comparison(results):
@@ -249,7 +287,9 @@ def print_comparison(results):
         max(len(headers[2]), *(len(row[2]) for row in rows)),
     ]
 
-    print(f"{headers[0]:<{widths[0]}}  {headers[1]:>{widths[1]}}  {headers[2]:>{widths[2]}}")
+    print(
+        f"{headers[0]:<{widths[0]}}  {headers[1]:>{widths[1]}}  {headers[2]:>{widths[2]}}"
+    )
     print(f"{'-' * widths[0]}  {'-' * widths[1]}  {'-' * widths[2]}")
     for metric, baseline, rl in rows:
         print(f"{metric:<{widths[0]}}  {baseline:>{widths[1]}}  {rl:>{widths[2]}}")
@@ -265,6 +305,16 @@ def parse_args():
         default="both",
         help="Which controller runs to execute.",
     )
+    parser.add_argument(
+        "--model-path",
+        default=MODEL_PATH,
+        help="Path to the trained model used for RL evaluation.",
+    )
+    parser.add_argument(
+        "--route-file",
+        default=None,
+        help="Optional route file override used for both baseline and RL evaluation.",
+    )
     return parser.parse_args()
 
 
@@ -273,9 +323,11 @@ def main():
     results = {}
 
     if args.mode in ("both", "baseline"):
-        results["baseline"] = run_default_controller()
+        results["baseline"] = run_default_controller(route_file=args.route_file)
     if args.mode in ("both", "rl"):
-        results["rl"] = run_rl_controller()
+        results["rl"] = run_rl_controller(
+            model_path=args.model_path, route_file=args.route_file
+        )
 
     if args.mode == "both":
         print_comparison(results)

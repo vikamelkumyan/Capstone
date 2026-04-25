@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-04-12T20:24:16.934844+04:00 by Eclipse SUMO netconvert 1.26.0
-<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+<!-- generated on 2026-04-23T13:37:06.559389+04:00 by Eclipse SUMO netedit 1.26.0
+<neteditConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
 
     <input>
+        <sumocfg-file value="/Users/macbook/Documents/komitas-vagharshyan/sumo_data/komitas-vagharshyan.sumocfg"/>
         <sumo-net-file value="sumo_data/komitas-vagharshyan.net.xml"/>
     </input>
 
@@ -30,7 +31,7 @@
         <walkingareas value="0"/>
     </pedestrian>
 
-</netconvertConfiguration>
+</neteditConfiguration>
 -->
 
 <net version="1.20" junctionCornerDetail="5" limitTurnSpeed="5.50" avoidOverlap="0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
@@ -4116,14 +4117,15 @@
     </edge>
 
     <tlLogic id="cluster_11668441165_11668441166_11668441167_2912634528_#8more" type="static" programID="0" offset="0">
-        <phase duration="31" state="rrrGGGGgrrrrrrGGGG" name="komitas full green"/>
-        <phase duration="4"  state="rrrGGGGgrrrrrryyyy"/>
-        <phase duration="6"  state="rrrGGGGGrrrrrrrrrr" name="komitas up green"/>
-        <phase duration="4"  state="rrryyyyyrrrrrrrrrr"/>
-        <phase duration="31" state="GGGrrrrrGGGgggrrrr" name="vagharshyan green"/>
-        <phase duration="4"  state="yyyrrrrrGGGgggrrrr"/>
-        <phase duration="8"  state="rrrrrrrrGGGGGGGrrr"/>
-        <phase duration="4"  state="rrrrrrrryyyyyyGrrr"/>
+        <phase duration="53" state="rrrGGGGgrrrrrrGGGG" name="komitas full green"/>
+        <phase duration="3"  state="rrrGGGGgrrrrrrGyyy"/>
+        <phase duration="15" state="rrrGGGGGrrrrrrGrrr" name="komitas up green"/>
+        <phase duration="3"  state="rrryyyyyrrrrrrrrrr"/>
+        <phase duration="28" state="GGGrrrrrGGGgggrrrr" name="vagharshyan green"/>
+        <phase duration="28" state="GGGrrrrrGGGggggrrr" name="vagharshyan green"/>
+        <phase duration="3"  state="yyyrrrrrGGGgggGrrr"/>
+        <phase duration="27" state="rrrrrrrrGGGGGGGrrr"/>
+        <phase duration="3"  state="rrrrrrrryyyyyyGrrr"/>
     </tlLogic>
 
     <junction id="11200637215" type="priority" x="387.31" y="287.62" incLanes="380344432#3_0 380344432#3_1 380344432#3_2 380344432#3_3" intLanes=":11200637215_0_0 :11200637215_0_1 :11200637215_0_2 :11200637215_0_3" shape="383.71,294.92 391.17,280.45 390.97,280.35 383.39,294.75">
@@ -5213,7 +5215,7 @@
         <request index="11" response="111000000011110110" foes="111000000011110110" cont="1"/>
         <request index="12" response="111000000011110110" foes="111000000011110110" cont="1"/>
         <request index="13" response="000000000010000110" foes="000000000010000110" cont="1"/>
-        <request index="14" response="000000000000000000" foes="000000000000000110" cont="0"/>
+        <request index="14" response="000000000000000110" foes="000000000000000110" cont="0"/>
         <request index="15" response="000001100000000000" foes="000001111110000110" cont="0"/>
         <request index="16" response="000001100000000000" foes="000001111110000110" cont="0"/>
         <request index="17" response="000001100000000000" foes="000001111110000110" cont="0"/>
