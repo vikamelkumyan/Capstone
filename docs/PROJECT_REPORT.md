@@ -77,6 +77,30 @@ The corridor-level formulation matters because a traffic signal decision is rare
 
 The SUMO model is used as a controlled experimental environment rather than a calibrated city model. The demand scenarios are synthetic and reproducible, which is appropriate for algorithm comparison, but the results should not be interpreted as a direct operational recommendation for the real Komitas corridor without calibration against observed traffic counts, turning ratios, saturation flows, and field signal timing.
 
+### 2.1.1 SUMO Network Visuals
+
+The following screenshots document the SUMO/NetEdit traffic-light setup used during model construction and debugging. They are included because the traffic-signal controller depends on the underlying network geometry, lane connections, and phase definitions, not only on Python code.
+
+![SUMO NetEdit traffic-light overview](assets/sumo_visuals/netedit_tls_overview.png)
+
+*Figure 1. SUMO NetEdit view of a signalized Komitas intersection. The screenshot shows the traffic-light editing context used to inspect and verify controlled links.*
+
+![Controlled traffic-light layout](assets/sumo_visuals/tls_layout.png)
+
+*Figure 2. Traffic-light layout view showing multiple signal heads and pedestrian/crossing connections around a Komitas corridor intersection.*
+
+![Junction close-up](assets/sumo_visuals/junction_closeup.png)
+
+*Figure 3. Close-up of a signalized junction. This view was used to inspect geometric complexity, controlled approaches, and lane-level signal placement.*
+
+![Controlled SUMO connections](assets/sumo_visuals/controlled_connections.png)
+
+*Figure 4. SUMO controlled connection visualization. Green and red connection lines show permitted and conflicting movements, which motivates explicit phase and yellow-transition handling.*
+
+![Lane movement schematic](assets/sumo_visuals/lane_movement_schematic.png)
+
+*Figure 5. Simplified lane movement schematic from the single-intersection stage. It documents the movement grouping used to reason about phase actions before scaling to the full corridor.*
+
 ### 2.2 Controlled Intersections
 
 The RL-controlled traffic lights are:
@@ -237,6 +261,18 @@ Invalid switch actions are masked before action selection, so the DQN normally c
 This keeps the learned controller inside a stable operational envelope.
 
 The timing layer is one of the most important engineering parts of the project. A neural network cannot be allowed to directly control raw signal states because it could create unsafe or physically meaningless transitions. In this repository, RL chooses among abstract phase-level actions, and deterministic traffic-signal logic translates those actions into legal SUMO phase changes. This separation makes the controller easier to reason about and closer to how adaptive signal control would be constrained in practice.
+
+### 5.1 Phase Visuals
+
+The following diagrams come from the earlier single-intersection Vagharshyan design stage. They are retained in the report because they show the underlying phase-abstraction idea used by the DQN action space: each action corresponds to extending the current green or selecting one valid green movement group. The active corridor controller generalizes this idea to each controlled traffic light by reading the valid green phases directly from SUMO.
+
+| Phase group | Visual |
+|---|---|
+| Phase 1: main Komitas through movement | ![Phase 1 movement group](assets/sumo_visuals/phase_1.png) |
+| Phase 2: protected/partial Komitas turning movement | ![Phase 2 movement group](assets/sumo_visuals/phase_2.png) |
+| Phase 3: Vagharshyan cross-street movement | ![Phase 3 movement group](assets/sumo_visuals/phase_3.png) |
+| Phase 4: combined cross-street and protected turning service | ![Phase 4 movement group](assets/sumo_visuals/phase_4.png) |
+| Phase 5: cross-street plus auxiliary approach service | ![Phase 5 movement group](assets/sumo_visuals/phase_5.png) |
 
 ## 6. Yellow Transition Design
 
