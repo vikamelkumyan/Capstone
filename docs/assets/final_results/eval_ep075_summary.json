@@ -1,0 +1,323 @@
+{
+  "model_path": "models/komitas_dqn_ep075.pth",
+  "source": "Final reported batch evaluation for checkpoint_ep075, copied into submission assets.",
+  "scenarios": [
+    "morning_rush",
+    "evening_rush",
+    "off_peak",
+    "corridor_stress"
+  ],
+  "seeds": [
+    41,
+    42,
+    43
+  ],
+  "steps": 3600,
+  "end_time": 7200,
+  "per_route_waiting_time": [
+    {
+      "scenario": "morning_rush",
+      "seed": 41,
+      "fixed_avg_wait": 620.09,
+      "maxpressure_avg_wait": 778.20,
+      "rl_avg_wait": 971.82,
+      "fixed_max_wait": 5964.00,
+      "rl_max_wait": 6322.00
+    },
+    {
+      "scenario": "morning_rush",
+      "seed": 42,
+      "fixed_avg_wait": 558.97,
+      "maxpressure_avg_wait": 599.01,
+      "rl_avg_wait": 642.46,
+      "fixed_max_wait": 6413.00,
+      "rl_max_wait": 6180.00
+    },
+    {
+      "scenario": "morning_rush",
+      "seed": 43,
+      "fixed_avg_wait": 634.27,
+      "maxpressure_avg_wait": 793.41,
+      "rl_avg_wait": 912.74,
+      "fixed_max_wait": 6416.00,
+      "rl_max_wait": 6070.00
+    },
+    {
+      "scenario": "evening_rush",
+      "seed": 41,
+      "fixed_avg_wait": 231.23,
+      "maxpressure_avg_wait": 201.63,
+      "rl_avg_wait": 124.71,
+      "fixed_max_wait": 3573.00,
+      "rl_max_wait": 898.00
+    },
+    {
+      "scenario": "evening_rush",
+      "seed": 42,
+      "fixed_avg_wait": 267.23,
+      "maxpressure_avg_wait": 201.44,
+      "rl_avg_wait": 133.53,
+      "fixed_max_wait": 4278.00,
+      "rl_max_wait": 823.00
+    },
+    {
+      "scenario": "evening_rush",
+      "seed": 43,
+      "fixed_avg_wait": 235.60,
+      "maxpressure_avg_wait": 204.82,
+      "rl_avg_wait": 136.53,
+      "fixed_max_wait": 4037.00,
+      "rl_max_wait": 1182.00
+    },
+    {
+      "scenario": "off_peak",
+      "seed": 41,
+      "fixed_avg_wait": 37.17,
+      "maxpressure_avg_wait": 327.79,
+      "rl_avg_wait": 33.48,
+      "fixed_max_wait": 377.00,
+      "rl_max_wait": 328.00
+    },
+    {
+      "scenario": "off_peak",
+      "seed": 42,
+      "fixed_avg_wait": 31.49,
+      "maxpressure_avg_wait": 297.30,
+      "rl_avg_wait": 27.14,
+      "fixed_max_wait": 215.00,
+      "rl_max_wait": 313.00
+    },
+    {
+      "scenario": "off_peak",
+      "seed": 43,
+      "fixed_avg_wait": 33.04,
+      "maxpressure_avg_wait": 38.35,
+      "rl_avg_wait": 31.78,
+      "fixed_max_wait": 273.00,
+      "rl_max_wait": 377.00
+    },
+    {
+      "scenario": "corridor_stress",
+      "seed": 41,
+      "fixed_avg_wait": 1946.71,
+      "maxpressure_avg_wait": 1664.69,
+      "rl_avg_wait": 1680.95,
+      "fixed_max_wait": 6840.00,
+      "rl_max_wait": 6600.00
+    },
+    {
+      "scenario": "corridor_stress",
+      "seed": 42,
+      "fixed_avg_wait": 1804.58,
+      "maxpressure_avg_wait": 1784.55,
+      "rl_avg_wait": 1717.60,
+      "fixed_max_wait": 6537.00,
+      "rl_max_wait": 6608.00
+    },
+    {
+      "scenario": "corridor_stress",
+      "seed": 43,
+      "fixed_avg_wait": 2268.96,
+      "maxpressure_avg_wait": 1610.62,
+      "rl_avg_wait": 1744.75,
+      "fixed_max_wait": 6539.00,
+      "rl_max_wait": 6489.00
+    }
+  ],
+  "per_scenario_means": [
+    {
+      "scenario": "corridor_stress",
+      "controller": "fixed_time",
+      "arrived": 1465,
+      "avg_queue": 31.43,
+      "avg_wait": 2006.7,
+      "trip_duration": 2260.2
+    },
+    {
+      "scenario": "corridor_stress",
+      "controller": "max_pressure",
+      "arrived": 1519,
+      "avg_queue": 29.80,
+      "avg_wait": 1686.6,
+      "trip_duration": 1927.0
+    },
+    {
+      "scenario": "corridor_stress",
+      "controller": "rl",
+      "arrived": 1506,
+      "avg_queue": 31.30,
+      "avg_wait": 1714.4,
+      "trip_duration": 1944.9,
+      "switches_per_route": 1064
+    },
+    {
+      "scenario": "evening_rush",
+      "controller": "fixed_time",
+      "arrived": 4486,
+      "avg_queue": 9.14,
+      "avg_wait": 244.7,
+      "trip_duration": 422.3
+    },
+    {
+      "scenario": "evening_rush",
+      "controller": "max_pressure",
+      "arrived": 3502,
+      "avg_queue": 4.25,
+      "avg_wait": 202.6,
+      "trip_duration": 368.4
+    },
+    {
+      "scenario": "evening_rush",
+      "controller": "rl",
+      "arrived": 4163,
+      "avg_queue": 3.36,
+      "avg_wait": 131.6,
+      "trip_duration": 303.7,
+      "switches_per_route": 1196
+    },
+    {
+      "scenario": "morning_rush",
+      "controller": "fixed_time",
+      "arrived": 3134,
+      "avg_queue": 16.18,
+      "avg_wait": 604.4,
+      "trip_duration": 799.7
+    },
+    {
+      "scenario": "morning_rush",
+      "controller": "max_pressure",
+      "arrived": 2703,
+      "avg_queue": 18.15,
+      "avg_wait": 723.5,
+      "trip_duration": 915.8
+    },
+    {
+      "scenario": "morning_rush",
+      "controller": "rl",
+      "arrived": 2725,
+      "avg_queue": 21.29,
+      "avg_wait": 842.3,
+      "trip_duration": 1037.1,
+      "switches_per_route": 1274
+    },
+    {
+      "scenario": "off_peak",
+      "controller": "fixed_time",
+      "arrived": 1574,
+      "avg_queue": 7.35,
+      "avg_wait": 33.9,
+      "trip_duration": 153.7
+    },
+    {
+      "scenario": "off_peak",
+      "controller": "max_pressure",
+      "arrived": 1532,
+      "avg_queue": 2.98,
+      "avg_wait": 221.1,
+      "trip_duration": 349.7
+    },
+    {
+      "scenario": "off_peak",
+      "controller": "rl",
+      "arrived": 1574,
+      "avg_queue": 2.24,
+      "avg_wait": 30.8,
+      "trip_duration": 149.3,
+      "switches_per_route": 609
+    }
+  ],
+  "overall_mean_std": {
+    "steps": {
+      "fixed_time": "6370.42 +/- 1500.80",
+      "max_pressure": "6934.50 +/- 930.11",
+      "rl": "6396.92 +/- 1460.07",
+      "delta_rl_vs_fixed_percent": -0.4
+    },
+    "vehicles_arrived": {
+      "fixed_time": "2664.42 +/- 1297.34",
+      "max_pressure": "2313.75 +/- 879.12",
+      "rl": "2492.00 +/- 1129.44",
+      "delta_rl_vs_fixed_percent": -6.5
+    },
+    "avg_queue_per_step": {
+      "fixed_time": "16.02 +/- 9.92",
+      "max_pressure": "13.80 +/- 11.50",
+      "rl": "14.55 +/- 12.87",
+      "delta_rl_vs_fixed_percent": 9.2
+    },
+    "avg_lane_wait_per_step": {
+      "fixed_time": "1282.93 +/- 1408.59",
+      "max_pressure": "1442.16 +/- 1439.99",
+      "rl": "1429.82 +/- 1548.45",
+      "delta_rl_vs_fixed_percent": -11.4
+    },
+    "avg_trip_duration": {
+      "fixed_time": "908.96 +/- 856.08",
+      "max_pressure": "890.21 +/- 675.74",
+      "rl": "858.76 +/- 747.06",
+      "delta_rl_vs_fixed_percent": 5.5
+    },
+    "avg_waiting_time": {
+      "fixed_time": "722.44 +/- 809.84",
+      "max_pressure": "708.48 +/- 635.39",
+      "rl": "679.79 +/- 708.37",
+      "delta_rl_vs_fixed_percent": 5.9
+    },
+    "avg_time_loss": {
+      "fixed_time": "811.30 +/- 848.99",
+      "max_pressure": "790.42 +/- 662.97",
+      "rl": "761.13 +/- 739.99",
+      "delta_rl_vs_fixed_percent": 6.2
+    },
+    "max_waiting_time": {
+      "fixed_time": "4288.50 +/- 2646.96",
+      "max_pressure": "5445.83 +/- 1817.79",
+      "rl": "3515.83 +/- 3003.53",
+      "delta_rl_vs_fixed_percent": 18.0
+    }
+  },
+  "policy_diagnostics": [
+    {
+      "tls": "Komitas-Griboyedov",
+      "dominant_action": 0,
+      "dominance_percent": 88.2,
+      "switches": 1569,
+      "blocked": 0
+    },
+    {
+      "tls": "Komitas-Gyulbenkyan",
+      "dominant_action": 0,
+      "dominance_percent": 75.5,
+      "switches": 2659,
+      "blocked": 0
+    },
+    {
+      "tls": "Komitas-Papazyan",
+      "dominant_action": 0,
+      "dominance_percent": 85.6,
+      "switches": 1607,
+      "blocked": 0
+    },
+    {
+      "tls": "Komitas-Tigranyan",
+      "dominant_action": 0,
+      "dominance_percent": 86.0,
+      "switches": 1869,
+      "blocked": 0
+    },
+    {
+      "tls": "Komitas-Vagharshyan",
+      "dominant_action": 0,
+      "dominance_percent": 77.7,
+      "switches": 2612,
+      "blocked": 0
+    },
+    {
+      "tls": "Komitas-Vracakan",
+      "dominant_action": 0,
+      "dominance_percent": 81.3,
+      "switches": 2115,
+      "blocked": 0
+    }
+  ]
+}

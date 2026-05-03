@@ -1,25 +1,42 @@
-# Traffic Signal Control with DQN (SUMO + TraCI)
+# Multi-Intersection Traffic Signal Control with DQN (SUMO + TraCI)
 
-This repository trains and evaluates a Deep Q-Network (DQN) traffic light controller for the Komitas-Vagharshyan intersection using Eclipse SUMO and TraCI.
+This repository trains and evaluates a Deep Q-Network (DQN) traffic signal controller for a multi-intersection Komitas corridor in SUMO.
 
-The repository is organized so a reviewer can reproduce the milestone directly from the tracked SUMO network, tracked route file, and the Python scripts in the root.
+The current active setup controls six named traffic lights:
 
-## What is in the repository
+- `Komitas-Gyulbenkyan`
+- `Komitas-Vagharshyan`
+- `Komitas-Papazyan`
+- `Komitas-Vracakan`
+- `Komitas-Griboyedov`
+- `Komitas-Tigranyan`
 
-- `train.py`: trains the DQN controller and saves the weights to `dqn_model.pth`
-- `test_sim.py`: loads `dqn_model.pth` and runs the controller in SUMO GUI mode
-- `sumo_data/`: SUMO network, routes, and simulation configuration
-- `scripts/`: helper scripts for inspecting the traffic light setup and generated traffic
-- `requirements.txt`: Python dependencies for a fresh environment
+Each controlled intersection has its own local DQN policy, and all six run together in the same simulation.
+
+## Repository Layout
+
+- [train.py](train.py:1): multi-intersection training entrypoint
+- [evaluate.py](evaluate.py:1): fixed-time vs MaxPressure vs RL comparison
+- [test_sim.py](test_sim.py:1): GUI visualization of the trained controller
+- [batch_evaluate.py](batch_evaluate.py:1): evaluation across multiple scenarios and seeds
+- [run_final_training.py](run_final_training.py:1): checkpoint-based final training and selection
+- [scripts/generate_traffic.py](scripts/generate_traffic.py:1): demand generation using trips plus `duarouter`
+- [scripts/inspect_network.py](scripts/inspect_network.py:1): SUMO traffic-light inspection utility
+- [models/komitas_dqn_ep075.pth](models/komitas_dqn_ep075.pth): selected final DQN model bundle
+- [sumo_data/komitas.net.xml](sumo_data/komitas.net.xml:1): active Komitas network
+- [sumo_data/komitas.sumocfg](sumo_data/komitas.sumocfg:1): active SUMO config
+- [sumo_data/routes.rou.xml](sumo_data/routes.rou.xml:1): active route demand
+
+Legacy single-intersection Vagharshyan assets are preserved under `sumo_data/legacy_single_intersection/` for project history and comparison. The active code defaults to the Komitas multi-intersection setup.
 
 ## Requirements
 
 - Python 3.10+
-- Eclipse SUMO installed with `sumo` and `sumo-gui` available on `PATH`
-- `SUMO_HOME` set correctly
-- Python packages: `torch`, `traci`, `numpy`
+- Eclipse SUMO installed with `sumo`, `sumo-gui`, and `duarouter` on `PATH`
+- `SUMO_HOME` configured
+- Python packages from [requirements.txt](requirements.txt:1)
 
-On macOS, SUMO can be installed with:
+On macOS:
 
 ```bash
 brew install sumo
@@ -27,124 +44,190 @@ brew install sumo
 
 ## Setup
 
-If you want to create a fresh virtual environment:
-
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## How to run
+Optional:
+
+```bash
+pre-commit install
+```
+
+## Main Workflow
 
 Run commands from the repository root.
 
-### 1. Train the model
+### 1. Generate or refresh demand
+
+```bash
+./.venv/bin/python scripts/generate_traffic.py \
+  --scenario morning_rush \
+  --seed 42 \
+  --steps 3600 \
+  --output sumo_data/routes.rou.xml \
+  --net-file sumo_data/komitas.net.xml
+```
+
+The script writes trips first, then uses `duarouter` to compute valid full routes on the Komitas network.
+
+For a heavier congestion test, use the built-in corridor stress profile or scale demand upward:
+
+```bash
+./.venv/bin/python scripts/generate_traffic.py \
+  --scenario corridor_stress \
+  --demand-scale 1.2 \
+  --seed 42 \
+  --steps 3600 \
+  --output sumo_data/routes.rou.xml \
+  --net-file sumo_data/komitas.net.xml
+```
+
+### 2. Train
 
 ```bash
 ./.venv/bin/python train.py
 ```
 
-This starts SUMO, samples from multiple generated traffic scenarios during training, and writes the trained weights to `dqn_model.pth`.
-Training runs headless by default, uses fixed seeds for reproducibility, and can generate per-episode route files under `training_routes/`.
+Training runs headless with `sumo` by default. It generates multiple traffic scenarios, trains on a balanced scenario/seed schedule, saves periodic checkpoints, and saves the final model bundle to `dqn_model.pth` unless another `--model-path` is provided.
 
-### 2. Test the trained model
+Example training run used for the current best result:
+
+```bash
+./.venv/bin/python train.py \
+  --episodes 200 \
+  --decisions-per-episode 720 \
+  --checkpoint-every 25 \
+  --checkpoint-dir runs/v3/checkpoints \
+  --model-path runs/v3/dqn_model.pth \
+  --training-route-dir runs/v3/training_routes \
+  --log-csv runs/v3/training_log.csv
+```
+
+Quick smoke test:
+
+```bash
+./.venv/bin/python train.py --episodes 1 --decisions-per-episode 1
+```
+
+### 3. Visual test
 
 ```bash
 ./.venv/bin/python test_sim.py
 ```
 
-This opens `sumo-gui`, loads `dqn_model.pth`, and runs the trained controller while printing each decision to the terminal.
-The current controller can either extend the active green or switch directly to one of the valid green phases, while still respecting minimum-green and synthesized yellow-transition logic.
-You can also override the model, route file, decision count, and GUI speed:
+This opens `sumo-gui` and prints the per-intersection local states, Q-values, and chosen actions.
+
+Useful options:
 
 ```bash
-./.venv/bin/python test_sim.py --route-file sumo_data/routes.rou.xml --decisions 150 --render-delay 0.25
+./.venv/bin/python test_sim.py --route-file sumo_data/routes.rou.xml --decisions 100 --render-delay 0.25
 ```
 
-### 3. Evaluate RL against the default SUMO controller
+### 4. Baseline vs RL comparison
 
 ```bash
 ./.venv/bin/python evaluate.py
 ```
 
-This runs the same scenario twice in headless SUMO:
+This runs:
 
-- once with the default built-in traffic light program
-- once with the trained RL controller
+- fixed-time SUMO controller on the full Komitas corridor
+- MaxPressure adaptive controller on the same scenario
+- RL controller on the same scenario
 
-It then prints side-by-side metrics such as average queue, waiting time, trip duration, and time loss.
+and prints a side-by-side metric table.
 
-### 4. Final training with checkpoint selection
-
-```bash
-./.venv/bin/python run_final_training.py
-```
-
-This does the full milestone-selection loop:
-
-- trains for `200` episodes
-- saves checkpoints every `10` episodes
-- trains on multiple generated traffic scenarios per episode
-- generates multiple evaluation traffic scenarios
-- evaluates every checkpoint with `evaluate.py` logic
-- picks the checkpoint with the best average cross-scenario score
-
-### 5. Batch evaluation across multiple scenarios
+### 5. Multi-scenario batch evaluation
 
 ```bash
 ./.venv/bin/python batch_evaluate.py
 ```
 
-This generates a grid of evaluation route files, runs baseline and RL on each one, and prints:
+This generates a scenario/seed grid, runs fixed-time, MaxPressure, and RL on every route file, and prints:
 
-- a per-route summary
-- one averaged comparison table across all scenarios and seeds
+- per-route results
+- per-scenario controller comparison
+- averaged fixed-time vs MaxPressure vs RL results
+- RL policy diagnostics, including action dominance and switch counts
 
 Example:
 
 ```bash
-./.venv/bin/python batch_evaluate.py --scenarios morning_rush evening_rush off_peak --seeds 41 42 43 --summary-json checkpoints/batch_eval_summary.json
+./.venv/bin/python batch_evaluate.py \
+  --model-path models/komitas_dqn_ep075.pth \
+  --scenarios morning_rush evening_rush off_peak corridor_stress \
+  --seeds 41 42 43 \
+  --steps 3600 \
+  --end-time 7200 \
+  --summary-json runs/v3/eval_ep075_summary.json
 ```
 
-## Results
-
-Results now depend on the selected training and evaluation artifacts. The recommended workflow is:
-
-1. run `./.venv/bin/python run_final_training.py`
-2. inspect the generated leaderboard in `checkpoints/final_training_v2/checkpoint_summary.json`
-3. run `./.venv/bin/python batch_evaluate.py --model-path <best-checkpoint>`
-4. use the averaged multi-scenario results for final comparison and reporting
-
-This avoids hard-coding stale numbers in the README when the training setup changes.
-
-## Controller Summary
-
-The current RL controller:
-
-- observes queue demand for the five valid green phases plus timing context
-- can extend the current green or request a specific next green phase
-- inserts a pair-specific yellow transition synthesized from the current and target green states
-- still enforces `MIN_GREEN` and `MAX_GREEN`
-
-This gives the agent more useful control authority than a simple fixed-cycle extend/switch controller while keeping signal changes constrained.
-
-## Useful notes
-
-- `train.py` uses headless `sumo` by default. `test_sim.py` uses `sumo-gui` for visualization.
-- If you want to override the SUMO binary, set `SUMO_BINARY` before running:
+### 6. Checkpoint-based final training
 
 ```bash
-SUMO_BINARY=sumo ./.venv/bin/python train.py
+./.venv/bin/python run_final_training.py
 ```
 
-- `test_sim.py` requires `dqn_model.pth`. Train first if the file does not exist.
-- The main SUMO config is `sumo_data/komitas-vagharshyan.sumocfg`.
-- The tracked `sumo_data/komitas-vagharshyan.net.xml` and `sumo_data/routes.rou.xml` files are intentional submission assets, not temporary build output.
+This workflow:
 
-## Helper scripts
+- trains for many episodes
+- saves periodic checkpoints
+- evaluates each checkpoint across multiple generated scenarios
+- ranks checkpoints by averaged score
 
-- `./.venv/bin/python scripts/inspect_tls.py`: print traffic light IDs and phase states
-- `./.venv/bin/python scripts/check_tls.py`: verify the configured traffic light mapping
-- `./.venv/bin/python scripts/analyze_phases.py`: inspect phase behavior
-- `./.venv/bin/python scripts/generate_traffic.py --scenario morning_rush`: regenerate route demand data deterministically if needed
+## Current Controller Design
+
+The current controller:
+
+- uses one local **Double DQN** per controlled intersection
+- observes a `k+13`-dimensional local state per intersection: per-phase pressures, timing context, spillback pressure, network load, and neighbor corridor features
+- can extend the current green or switch to a valid green phase directly
+- masks invalid actions so early switches are not selected before `MIN_GREEN`
+- synthesizes pair-specific yellow transitions from the current and target green states
+- enforces `MIN_GREEN` and `MAX_GREEN`
+- uses a pressure/wait/spillback reward with starvation protection and demand-scaled switching cost
+- trains on a balanced round-robin scenario schedule
+- uses gradient clipping (`max_norm=10.0`) for training stability
+- epsilon decays over the first 85% of training episodes
+
+This is a hybrid design: RL chooses local actions, while timing safety rules remain rule-based. The neighbor state features provide implicit corridor coordination without requiring a centralized joint policy.
+
+## Current Evaluation Result
+
+The selected final model is [models/komitas_dqn_ep075.pth](models/komitas_dqn_ep075.pth), selected from multi-scenario evaluation across four demand profiles and three seeds (`41`, `42`, `43`). Against the fixed-time baseline, this checkpoint improves average queue, trip duration, waiting time, time loss, and worst-case waiting time, while still arriving fewer vehicles overall.
+
+| Metric | Fixed-Time | MaxPressure | RL | Delta vs Fixed |
+|---|---:|---:|---:|---:|
+| Vehicles Arrived | 2664.42 | 2313.75 | 2492.00 | -6.5% |
+| Avg Queue / Step | 16.02 | 13.80 | 14.55 | +9.2% |
+| Avg Trip Duration | 908.96 | 890.21 | 858.76 | +5.5% |
+| Avg Waiting Time | 722.44 | 708.48 | 679.79 | +5.9% |
+| Avg Time Loss | 811.30 | 790.42 | 761.13 | +6.2% |
+| Max Waiting Time | 4288.50 | 5445.83 | 3515.83 | +18.0% |
+
+Scenario-level behavior is mixed: RL performs strongly on `evening_rush` and `off_peak`, is competitive on `corridor_stress`, and remains weaker than fixed-time on `morning_rush`. The throughput gap and morning-rush degradation are the main current limitations.
+
+## Active Config And Assets
+
+Current defaults:
+
+- config: [sumo_data/komitas.sumocfg](sumo_data/komitas.sumocfg:1)
+- network: [sumo_data/komitas.net.xml](sumo_data/komitas.net.xml:1)
+- route file: [sumo_data/routes.rou.xml](sumo_data/routes.rou.xml:1)
+- legacy single-intersection files: [sumo_data/legacy_single_intersection/](sumo_data/legacy_single_intersection/README.md:1)
+
+## Notes
+
+- `train.py` uses headless `sumo`; `test_sim.py` uses `sumo-gui`
+- route generation now depends on `duarouter`
+- generated artifacts such as checkpoints, training routes, and `*.rou.alt.xml` files are ignored by git
+- final report assets are stored under `docs/assets/final_results/`
+
+## More Documentation
+
+- [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md:1): complete capstone paper and final report source
+- [docs/RL_OVERVIEW.md](docs/RL_OVERVIEW.md:1)
+- [docs/PIPELINE.md](docs/PIPELINE.md:1)

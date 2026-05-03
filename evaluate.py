@@ -2,31 +2,30 @@ import argparse
 import os
 import tempfile
 import xml.etree.ElementTree as ET
+from collections import Counter
 
 import torch
 import traci
 
 from train import (
-    ACTION_DIM,
-    apply_green_phase,
-    DQN,
-    build_transition_state,
-    decode_action,
-    EXTEND_STEP,
-    PHASE_TRANSITIONS,
-    MAX_GREEN,
-    MIN_GREEN,
+    CONTROLLED_TLS_IDS,
     MODEL_PATH,
-    STATE_DIM,
-    TLS_ID,
-    YELLOW_DURATION,
+    apply_actions,
     create_config_with_route_override,
+    decode_action,
+    determine_current_green_phase,
+    get_congestion_metrics,
     get_state,
+    get_valid_action_ids,
     init_phase_lanes,
+    load_model_bundle,
+    select_action_from_q_values,
+    select_max_pressure_phase,
+    start_traci,
 )
 
 
-def build_eval_sumo_cmd(config_path, tripinfo_output):
+def build_eval_sumo_cmd(config_path, tripinfo_output, end_time=7200):
     """Build a headless SUMO command for evaluation."""
     sumo_binary = os.environ.get("SUMO_EVAL_BINARY", "sumo")
     return [
@@ -34,7 +33,10 @@ def build_eval_sumo_cmd(config_path, tripinfo_output):
         "-c",
         config_path,
         "--no-warnings",
+        "--no-step-log",
         "--quit-on-end",
+        "--end",
+        str(end_time),
         "--tripinfo-output",
         tripinfo_output,
     ]
@@ -75,6 +77,14 @@ def init_metrics():
     }
 
 
+def get_all_controlled_lanes():
+    """Return the unique union of lanes controlled by the selected TLS set."""
+    lanes = []
+    for tls_id in CONTROLLED_TLS_IDS:
+        lanes.extend(traci.trafficlight.getControlledLanes(tls_id))
+    return list(dict.fromkeys(lanes))
+
+
 def record_step_metrics(metrics, controlled_lanes):
     """Update per-step queue and waiting-time aggregates."""
     metrics["steps"] += 1
@@ -93,18 +103,6 @@ def step_with_metrics(seconds, metrics, controlled_lanes):
         record_step_metrics(metrics, controlled_lanes)
 
 
-def switch_phase_with_metrics(current_phase, metrics, controlled_lanes):
-    """Transition to the next green phase using a synthesized yellow phase."""
-    next_phase = PHASE_TRANSITIONS[current_phase]["next_green"]
-    transition_state = build_transition_state(current_phase, next_phase)
-    if transition_state != traci.trafficlight.getRedYellowGreenState(TLS_ID):
-        traci.trafficlight.setRedYellowGreenState(TLS_ID, transition_state)
-        step_with_metrics(YELLOW_DURATION, metrics, controlled_lanes)
-
-    apply_green_phase(next_phase)
-    return next_phase
-
-
 def finalize_metrics(metrics, tripinfo_metrics):
     steps = max(metrics["steps"], 1)
     return {
@@ -119,18 +117,21 @@ def finalize_metrics(metrics, tripinfo_metrics):
     }
 
 
-def run_default_controller(route_file=None):
+def run_default_controller(route_file=None, end_time=7200):
     """Run the scenario with the built-in SUMO traffic light logic."""
     with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as tmp:
         tripinfo_path = tmp.name
 
     metrics = init_metrics()
     config_path, temp_config_path = create_config_with_route_override(route_file)
-    traci.start(build_eval_sumo_cmd(config_path, tripinfo_path))
+    start_traci(build_eval_sumo_cmd(config_path, tripinfo_path, end_time=end_time))
     try:
         try:
-            controlled_lanes = list(set(traci.trafficlight.getControlledLanes(TLS_ID)))
-            while traci.simulation.getMinExpectedNumber() > 0:
+            controlled_lanes = get_all_controlled_lanes()
+            while (
+                traci.simulation.getMinExpectedNumber() > 0
+                and traci.simulation.getTime() < end_time
+            ):
                 traci.simulationStep()
                 record_step_metrics(metrics, controlled_lanes)
         finally:
@@ -144,82 +145,135 @@ def run_default_controller(route_file=None):
     return finalize_metrics(metrics, tripinfo_metrics)
 
 
-def load_policy(model_path):
-    """Load the trained DQN policy from disk."""
-    policy_net = DQN(state_dim=STATE_DIM, action_dim=ACTION_DIM)
-    try:
-        policy_net.load_state_dict(torch.load(model_path, map_location="cpu"))
-    except RuntimeError as exc:
-        raise RuntimeError(
-            "Saved model is incompatible with the current controller architecture. "
-            "Retrain with train.py before running evaluation."
-        ) from exc
-    policy_net.eval()
-    return policy_net
-
-
-def run_rl_controller(model_path=MODEL_PATH, route_file=None):
-    """Run the scenario using the trained RL controller."""
+def run_rl_controller(model_path=MODEL_PATH, route_file=None, end_time=7200):
+    """Run the scenario using the trained multi-intersection RL controller."""
     with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as tmp:
         tripinfo_path = tmp.name
 
     metrics = init_metrics()
-    policy_net = load_policy(model_path)
+    action_counts = {tls_id: Counter() for tls_id in CONTROLLED_TLS_IDS}
+    switch_counts = {tls_id: 0 for tls_id in CONTROLLED_TLS_IDS}
+    blocked_switch_counts = {tls_id: 0 for tls_id in CONTROLLED_TLS_IDS}
+    policy_nets = load_model_bundle(model_path)
     config_path, temp_config_path = create_config_with_route_override(route_file)
 
-    traci.start(build_eval_sumo_cmd(config_path, tripinfo_path))
+    start_traci(build_eval_sumo_cmd(config_path, tripinfo_path, end_time=end_time))
     try:
         try:
             init_phase_lanes()
-            controlled_lanes = list(set(traci.trafficlight.getControlledLanes(TLS_ID)))
-            current_phase = traci.trafficlight.getPhase(TLS_ID)
-            elapsed_green = 0
+            controlled_lanes = get_all_controlled_lanes()
+            current_phases = {
+                tls_id: determine_current_green_phase(tls_id)
+                for tls_id in CONTROLLED_TLS_IDS
+            }
+            elapsed_greens = {tls_id: 0 for tls_id in CONTROLLED_TLS_IDS}
 
             step_with_metrics(20, metrics, controlled_lanes)
 
-            while traci.simulation.getMinExpectedNumber() > 0:
-                state = get_state(current_phase, elapsed_green)
-                with torch.no_grad():
-                    state_tensor = torch.FloatTensor(state).unsqueeze(0)
-                    action = policy_net(state_tensor).argmax().item()
-
-                action_info = decode_action(action)
-
-                if action_info["type"] == "extend":
-                    step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
-                    elapsed_green += EXTEND_STEP
-
-                    if elapsed_green >= MAX_GREEN:
-                        current_phase = switch_phase_with_metrics(
-                            current_phase, metrics, controlled_lanes
+            while (
+                traci.simulation.getMinExpectedNumber() > 0
+                and traci.simulation.getTime() < end_time
+            ):
+                local_metrics = {
+                    tls_id: get_congestion_metrics(tls_id)
+                    for tls_id in CONTROLLED_TLS_IDS
+                }
+                action_infos = {}
+                for tls_id in CONTROLLED_TLS_IDS:
+                    state = get_state(
+                        tls_id,
+                        current_phases[tls_id],
+                        elapsed_greens[tls_id],
+                        metrics_by_tls=local_metrics,
+                        current_phases=current_phases,
+                    )
+                    with torch.no_grad():
+                        state_tensor = torch.FloatTensor(state).unsqueeze(0)
+                        q_values = policy_nets[tls_id](state_tensor).squeeze(0)
+                        valid_action_ids = get_valid_action_ids(
+                            tls_id,
+                            current_phases[tls_id],
+                            elapsed_greens[tls_id],
                         )
-                        elapsed_green = 0
-                else:
-                    target_phase = action_info["target_phase"]
-                    if target_phase == current_phase:
-                        step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
-                        elapsed_green += EXTEND_STEP
-                    elif elapsed_green < MIN_GREEN:
-                        step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
-                        elapsed_green += EXTEND_STEP
+                        action_id = select_action_from_q_values(
+                            q_values, valid_action_ids
+                        )
+                    action_counts[tls_id][action_id] += 1
+                    action_infos[tls_id] = decode_action(tls_id, action_id)
+
+                current_phases, elapsed_greens, switch_plan = apply_actions(
+                    action_infos,
+                    current_phases,
+                    elapsed_greens,
+                    metrics=metrics,
+                    controlled_lanes=controlled_lanes,
+                )
+                for tls_id in CONTROLLED_TLS_IDS:
+                    if switch_plan[tls_id]["switched"]:
+                        switch_counts[tls_id] += 1
+                    elif action_infos[tls_id]["type"] == "switch":
+                        blocked_switch_counts[tls_id] += 1
+        finally:
+            traci.close()
+    finally:
+        if temp_config_path:
+            os.unlink(temp_config_path)
+
+    tripinfo_metrics = parse_tripinfo(tripinfo_path)
+    os.unlink(tripinfo_path)
+    result = finalize_metrics(metrics, tripinfo_metrics)
+    result["action_counts"] = {
+        tls_id: dict(sorted(counts.items())) for tls_id, counts in action_counts.items()
+    }
+    result["switch_counts"] = switch_counts
+    result["blocked_switch_counts"] = blocked_switch_counts
+    return result
+
+
+def run_max_pressure_controller(route_file=None, end_time=7200):
+    """Run the scenario using the MaxPressure greedy baseline (Wei et al., KDD 2019)."""
+    with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as tmp:
+        tripinfo_path = tmp.name
+
+    metrics = init_metrics()
+    config_path, temp_config_path = create_config_with_route_override(route_file)
+    start_traci(build_eval_sumo_cmd(config_path, tripinfo_path, end_time=end_time))
+    try:
+        try:
+            init_phase_lanes()
+            controlled_lanes = get_all_controlled_lanes()
+            current_phases = {
+                tls_id: determine_current_green_phase(tls_id)
+                for tls_id in CONTROLLED_TLS_IDS
+            }
+            elapsed_greens = {tls_id: 0 for tls_id in CONTROLLED_TLS_IDS}
+
+            step_with_metrics(20, metrics, controlled_lanes)
+
+            while (
+                traci.simulation.getMinExpectedNumber() > 0
+                and traci.simulation.getTime() < end_time
+            ):
+                action_infos = {}
+                for tls_id in CONTROLLED_TLS_IDS:
+                    best_phase = select_max_pressure_phase(
+                        tls_id, current_phases[tls_id], elapsed_greens[tls_id]
+                    )
+                    if best_phase == current_phases[tls_id]:
+                        action_infos[tls_id] = {"type": "extend", "target_phase": None}
                     else:
-                        transition_state = build_transition_state(
-                            current_phase, target_phase
-                        )
-                        if (
-                            transition_state
-                            != traci.trafficlight.getRedYellowGreenState(TLS_ID)
-                        ):
-                            traci.trafficlight.setRedYellowGreenState(
-                                TLS_ID, transition_state
-                            )
-                            step_with_metrics(
-                                YELLOW_DURATION, metrics, controlled_lanes
-                            )
-                        apply_green_phase(target_phase)
-                        current_phase = target_phase
-                        elapsed_green = 0
-                        step_with_metrics(EXTEND_STEP, metrics, controlled_lanes)
+                        action_infos[tls_id] = {
+                            "type": "switch",
+                            "target_phase": best_phase,
+                        }
+
+                current_phases, elapsed_greens, _ = apply_actions(
+                    action_infos,
+                    current_phases,
+                    elapsed_greens,
+                    metrics=metrics,
+                    controlled_lanes=controlled_lanes,
+                )
         finally:
             traci.close()
     finally:
@@ -231,68 +285,79 @@ def run_rl_controller(model_path=MODEL_PATH, route_file=None):
     return finalize_metrics(metrics, tripinfo_metrics)
 
 
-def evaluate_pair(model_path=MODEL_PATH, route_file=None):
-    """Run baseline and RL evaluation on the same scenario."""
+def evaluate_pair(model_path=MODEL_PATH, route_file=None, end_time=7200):
+    """Run fixed-time, MaxPressure, and RL evaluation on the same scenario."""
     return {
-        "baseline": run_default_controller(route_file=route_file),
-        "rl": run_rl_controller(model_path=model_path, route_file=route_file),
+        "baseline": run_default_controller(route_file=route_file, end_time=end_time),
+        "max_pressure": run_max_pressure_controller(
+            route_file=route_file, end_time=end_time
+        ),
+        "rl": run_rl_controller(
+            model_path=model_path, route_file=route_file, end_time=end_time
+        ),
     }
 
 
 def print_comparison(results):
-    """Print metrics in a simple side-by-side table."""
-    headers = ("Metric", "Baseline", "RL")
-    rows = [
-        ("Steps", f"{results['baseline']['steps']}", f"{results['rl']['steps']}"),
-        (
-            "Vehicles Arrived",
-            f"{results['baseline']['arrived_vehicles']}",
-            f"{results['rl']['arrived_vehicles']}",
-        ),
-        (
-            "Avg Queue / Step",
-            f"{results['baseline']['avg_queue_per_step']:.2f}",
-            f"{results['rl']['avg_queue_per_step']:.2f}",
-        ),
-        (
-            "Avg Lane Wait / Step",
-            f"{results['baseline']['avg_lane_wait_per_step']:.2f}",
-            f"{results['rl']['avg_lane_wait_per_step']:.2f}",
-        ),
-        (
-            "Avg Trip Duration",
-            f"{results['baseline']['avg_trip_duration']:.2f}",
-            f"{results['rl']['avg_trip_duration']:.2f}",
-        ),
-        (
-            "Avg Waiting Time",
-            f"{results['baseline']['avg_waiting_time']:.2f}",
-            f"{results['rl']['avg_waiting_time']:.2f}",
-        ),
-        (
-            "Avg Time Loss",
-            f"{results['baseline']['avg_time_loss']:.2f}",
-            f"{results['rl']['avg_time_loss']:.2f}",
-        ),
-        (
-            "Max Waiting Time",
-            f"{results['baseline']['max_waiting_time']:.2f}",
-            f"{results['rl']['max_waiting_time']:.2f}",
-        ),
+    """Print metrics for fixed-time, MaxPressure, and RL with Δ% vs fixed-time baseline."""
+    metric_specs = [
+        ("Steps", "steps", False),
+        ("Vehicles Arrived", "arrived_vehicles", True),
+        ("Avg Queue / Step", "avg_queue_per_step", False),
+        ("Avg Lane Wait / Step", "avg_lane_wait_per_step", False),
+        ("Avg Trip Duration", "avg_trip_duration", False),
+        ("Avg Waiting Time", "avg_waiting_time", False),
+        ("Avg Time Loss", "avg_time_loss", False),
+        ("Max Waiting Time", "max_waiting_time", False),
     ]
 
-    widths = [
-        max(len(headers[0]), *(len(row[0]) for row in rows)),
-        max(len(headers[1]), *(len(row[1]) for row in rows)),
-        max(len(headers[2]), *(len(row[2]) for row in rows)),
-    ]
+    def pct(base, val, higher_is_better=False):
+        if base == 0:
+            return "n/a"
+        delta = (
+            ((val - base) / abs(base) * 100)
+            if higher_is_better
+            else ((base - val) / abs(base) * 100)
+        )
+        sign = "+" if delta >= 0 else ""
+        return f"{sign}{delta:.1f}%"
 
-    print(
-        f"{headers[0]:<{widths[0]}}  {headers[1]:>{widths[1]}}  {headers[2]:>{widths[2]}}"
+    def fmt(v):
+        return f"{v:.2f}" if isinstance(v, float) else str(v)
+
+    has_mp = "max_pressure" in results
+    headers = (
+        ("Metric", "Fixed-Time", "MaxPressure", "RL", "Δ% (RL vs Fixed)")
+        if has_mp
+        else ("Metric", "Fixed-Time", "RL", "Δ% (RL vs Fixed)")
     )
-    print(f"{'-' * widths[0]}  {'-' * widths[1]}  {'-' * widths[2]}")
-    for metric, baseline, rl in rows:
-        print(f"{metric:<{widths[0]}}  {baseline:>{widths[1]}}  {rl:>{widths[2]}}")
+    rows = []
+    for label, key, higher in metric_specs:
+        b = results["baseline"][key]
+        r = results["rl"][key]
+        if has_mp:
+            mp = results["max_pressure"][key]
+            rows.append((label, fmt(b), fmt(mp), fmt(r), pct(b, r, higher)))
+        else:
+            rows.append((label, fmt(b), fmt(r), pct(b, r, higher)))
+
+    n = len(headers)
+    widths = [max(len(headers[i]), *(len(row[i]) for row in rows)) for i in range(n)]
+    sep = "  "
+    header_line = sep.join(
+        f"{headers[i]:<{widths[i]}}" if i == 0 else f"{headers[i]:>{widths[i]}}"
+        for i in range(n)
+    )
+    divider = sep.join("-" * w for w in widths)
+    print(header_line)
+    print(divider)
+    for row in rows:
+        print(
+            sep.join(
+                f"{row[i]:<{widths[i]}}" if i == 0 else f"{row[i]:>{widths[i]}}"
+                for i in range(n)
+            )
+        )
 
 
 def parse_args():
@@ -301,7 +366,7 @@ def parse_args():
     )
     parser.add_argument(
         "--mode",
-        choices=("both", "baseline", "rl"),
+        choices=("both", "baseline", "max_pressure", "rl"),
         default="both",
         help="Which controller runs to execute.",
     )
@@ -315,6 +380,12 @@ def parse_args():
         default=None,
         help="Optional route file override used for both baseline and RL evaluation.",
     )
+    parser.add_argument(
+        "--end-time",
+        type=int,
+        default=7200,
+        help="Simulated seconds to run each evaluation (default: 7200).",
+    )
     return parser.parse_args()
 
 
@@ -323,16 +394,24 @@ def main():
     results = {}
 
     if args.mode in ("both", "baseline"):
-        results["baseline"] = run_default_controller(route_file=args.route_file)
+        results["baseline"] = run_default_controller(
+            route_file=args.route_file, end_time=args.end_time
+        )
+    if args.mode in ("both", "max_pressure"):
+        results["max_pressure"] = run_max_pressure_controller(
+            route_file=args.route_file, end_time=args.end_time
+        )
     if args.mode in ("both", "rl"):
         results["rl"] = run_rl_controller(
-            model_path=args.model_path, route_file=args.route_file
+            model_path=args.model_path,
+            route_file=args.route_file,
+            end_time=args.end_time,
         )
 
     if args.mode == "both":
         print_comparison(results)
     else:
-        controller = "baseline" if args.mode == "baseline" else "rl"
+        controller = args.mode
         for key, value in results[controller].items():
             if isinstance(value, float):
                 print(f"{key}: {value:.2f}")

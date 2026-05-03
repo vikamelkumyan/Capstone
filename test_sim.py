@@ -5,119 +5,118 @@ import torch
 import traci
 
 from train import (
-    ACTION_DIM,
-    DQN,
-    EXTEND_STEP,
-    MAX_GREEN,
-    MIN_GREEN,
+    CONTROLLED_TLS_IDS,
     MODEL_PATH,
-    STATE_DIM,
-    TLS_ID,
+    apply_actions,
     build_sumo_cmd,
     create_config_with_route_override,
     decode_action,
+    determine_current_green_phase,
+    get_congestion_metrics,
     get_state,
+    get_valid_action_ids,
     init_phase_lanes,
-    switch_phase,
-    switch_to_phase,
-    step_for_seconds,
+    load_model_bundle,
+    select_action_from_q_values,
+    start_traci,
 )
 
 
-def load_policy(model_path):
-    """Load the trained controller for GUI testing."""
-    policy_net = DQN(STATE_DIM, ACTION_DIM)
+def test(
+    model_path=MODEL_PATH,
+    route_file=None,
+    decisions=200,
+    render_delay=0.5,
+    verbose=False,
+):
+    """Run the trained multi-intersection controller in SUMO GUI mode."""
     try:
-        policy_net.load_state_dict(torch.load(model_path, map_location="cpu"))
+        policy_nets = load_model_bundle(model_path)
     except FileNotFoundError:
         print(f"Error: {model_path} not found. Please run train.py first.")
-        return None
-    except RuntimeError as exc:
-        print(
-            "Error: saved model is incompatible with the current controller "
-            "architecture. Retrain with train.py and try again."
-        )
-        print(f"Details: {exc}")
-        return None
-
-    policy_net.eval()
-    print(f"Successfully loaded trained DQN model ({model_path}).")
-    return policy_net
-
-
-def test(model_path=MODEL_PATH, route_file=None, decisions=200, render_delay=0.5):
-    """Run the trained controller in SUMO GUI mode."""
-    policy_net = load_policy(model_path)
-    if policy_net is None:
         return
+    except RuntimeError as exc:
+        print(str(exc))
+        return
+
+    print(f"Successfully loaded trained DQN model bundle ({model_path}).")
 
     config_path, temp_config_path = create_config_with_route_override(route_file)
     sumo_cmd = build_sumo_cmd(config_path, sumo_binary="sumo-gui")
 
-    traci.start(sumo_cmd)
+    start_traci(sumo_cmd)
     try:
         init_phase_lanes()
+        current_phases = {
+            tls_id: determine_current_green_phase(tls_id)
+            for tls_id in CONTROLLED_TLS_IDS
+        }
+        elapsed_greens = {tls_id: 0 for tls_id in CONTROLLED_TLS_IDS}
 
-        current_phase = traci.trafficlight.getPhase(TLS_ID)
-        elapsed_green = 0
+        for _ in range(20):
+            traci.simulationStep()
+            if render_delay > 0.0:
+                import time
 
-        step_for_seconds(20, render_delay=render_delay)
+                time.sleep(render_delay)
 
         for step in range(decisions):
             if traci.simulation.getMinExpectedNumber() <= 0:
                 print("All vehicles have departed/arrived. Ending simulation early.")
                 break
 
-            state = get_state(current_phase, elapsed_green)
+            local_metrics = {
+                tls_id: get_congestion_metrics(tls_id) for tls_id in CONTROLLED_TLS_IDS
+            }
+            action_infos = {}
+            print(f"\nDecision {step + 1:03d}")
+            for tls_id in CONTROLLED_TLS_IDS:
+                state = get_state(
+                    tls_id,
+                    current_phases[tls_id],
+                    elapsed_greens[tls_id],
+                    metrics_by_tls=local_metrics,
+                    current_phases=current_phases,
+                )
+                with torch.no_grad():
+                    state_tensor = torch.FloatTensor(state).unsqueeze(0)
+                    q_values = policy_nets[tls_id](state_tensor)
+                    valid_action_ids = get_valid_action_ids(
+                        tls_id,
+                        current_phases[tls_id],
+                        elapsed_greens[tls_id],
+                    )
+                    action_id = select_action_from_q_values(
+                        q_values.squeeze(0),
+                        valid_action_ids,
+                    )
 
-            with torch.no_grad():
-                state_tensor = torch.FloatTensor(state).unsqueeze(0)
-                q_values = policy_net(state_tensor)
-                action = q_values.argmax().item()
-
-            action_info = decode_action(action)
-            action_name = (
-                "EXTEND"
-                if action_info["type"] == "extend"
-                else f"SWITCH->{action_info['target_phase']}"
-            )
-            print(
-                f"Step {step + 1:03d} | State: {state.tolist()} | "
-                f"Q-values: {q_values.tolist()[0]} | Action: {action_name}"
-            )
-
-            if action_info["type"] == "extend":
-                step_for_seconds(EXTEND_STEP, render_delay=render_delay)
-                elapsed_green += EXTEND_STEP
-
-                if elapsed_green >= MAX_GREEN:
+                action_info = decode_action(tls_id, action_id)
+                action_infos[tls_id] = action_info
+                action_name = (
+                    "EXTEND"
+                    if action_info["type"] == "extend"
+                    else f"SWITCH->{action_info['target_phase']}"
+                )
+                if verbose:
                     print(
-                        " -> MAX_GREEN duration limit reached. Intervening to force switch."
+                        f"  {tls_id}: phase={current_phases[tls_id]} elapsed={elapsed_greens[tls_id]} "
+                        f"state={state.tolist()} q={q_values.tolist()[0]} action={action_name}"
                     )
-                    current_phase = switch_phase(
-                        current_phase, render_delay=render_delay
-                    )
-                    elapsed_green = 0
-            else:
-                target_phase = action_info["target_phase"]
-                if target_phase == current_phase:
-                    print(
-                        " -> Target phase is already active. Treating action as EXTEND."
-                    )
-                    step_for_seconds(EXTEND_STEP, render_delay=render_delay)
-                    elapsed_green += EXTEND_STEP
-                elif elapsed_green < MIN_GREEN:
-                    print(" -> MIN_GREEN not yet reached. Overriding SWITCH to EXTEND.")
-                    step_for_seconds(EXTEND_STEP, render_delay=render_delay)
-                    elapsed_green += EXTEND_STEP
                 else:
-                    current_phase = switch_to_phase(
-                        current_phase,
-                        target_phase,
-                        render_delay=render_delay,
+                    metrics = local_metrics[tls_id]
+                    print(
+                        f"  {tls_id}: phase={current_phases[tls_id]} "
+                        f"elapsed={elapsed_greens[tls_id]} queue={metrics['total_queue']} "
+                        f"wait={metrics['total_wait']:.1f} action={action_name}"
                     )
-                    elapsed_green = 0
-                    step_for_seconds(EXTEND_STEP, render_delay=render_delay)
+
+            current_phases, elapsed_greens, _ = apply_actions(
+                action_infos,
+                current_phases,
+                elapsed_greens,
+                render_delay=render_delay,
+            )
     finally:
         traci.close()
         if temp_config_path:
@@ -152,6 +151,11 @@ def parse_args():
         default=0.5,
         help="Delay in seconds between SUMO GUI steps.",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print full state vectors and Q-values for every decision.",
+    )
     return parser.parse_args()
 
 
@@ -162,4 +166,5 @@ if __name__ == "__main__":
         route_file=args.route_file,
         decisions=args.decisions,
         render_delay=args.render_delay,
+        verbose=args.verbose,
     )

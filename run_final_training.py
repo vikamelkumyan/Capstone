@@ -54,10 +54,9 @@ def build_eval_routes(output_dir, scenarios, seeds, steps):
     for scenario in scenarios:
         for seed in seeds:
             route_path = output_dir / f"{scenario}_seed{seed}.rou.xml"
-            if not route_path.exists():
-                generate_route_file(
-                    route_path, SCENARIOS[scenario], seed=seed, n_steps=steps
-                )
+            generate_route_file(
+                route_path, SCENARIOS[scenario], seed=seed, n_steps=steps
+            )
             route_files.append(
                 {
                     "scenario": scenario,
@@ -205,6 +204,12 @@ def parse_args():
     )
     parser.add_argument("--episodes", type=int, default=200, help="Training episodes.")
     parser.add_argument(
+        "--decisions-per-episode",
+        type=int,
+        default=720,
+        help="Control decisions per training episode.",
+    )
+    parser.add_argument(
         "--checkpoint-every",
         type=int,
         default=10,
@@ -212,7 +217,7 @@ def parse_args():
     )
     parser.add_argument(
         "--checkpoint-dir",
-        default="checkpoints/final_training_v2",
+        default="runs/final_training",
         help="Directory used for training checkpoints and evaluation artifacts.",
     )
     parser.add_argument(
@@ -274,6 +279,7 @@ def main():
     if should_train:
         train(
             episodes=args.episodes,
+            decisions_per_episode=args.decisions_per_episode,
             model_path=args.model_path,
             checkpoint_every=args.checkpoint_every,
             checkpoint_dir=str(checkpoint_dir),

@@ -1,161 +1,163 @@
 # Pipeline
 
-This file explains the current end-to-end workflow from tracked SUMO assets to a trained RL controller and comparison results.
+This file explains the current multi-intersection Komitas workflow from SUMO assets to training and evaluation.
 
-## 1. Scenario Assets
+## 1. Active Scenario Files
 
-The tracked SUMO assets live under [sumo_data](/Users/macbook/Documents/komitas-vagharshyan/sumo_data):
+The active defaults are:
 
-- `komitas-vagharshyan.net.xml`: network, junction topology, and traffic light logic
-- `komitas-vagharshyan.sumocfg`: SUMO scenario configuration
-- `routes.rou.xml`: active route demand file
-- `komitas-vagharshyan.osm`: raw map source
+- [sumo_data/komitas.net.xml](sumo_data/komitas.net.xml:1)
+- [sumo_data/komitas.sumocfg](sumo_data/komitas.sumocfg:1)
+- [sumo_data/routes.rou.xml](sumo_data/routes.rou.xml:1)
 
-All main scripts run against:
-
-```text
-sumo_data/komitas-vagharshyan.sumocfg
-```
+The route file is compatible with the Komitas network because it is generated as trips and then routed through the network using `duarouter`.
 
 ## 2. Demand Generation
 
-Traffic demand can be regenerated with [scripts/generate_traffic.py](/Users/macbook/Documents/komitas-vagharshyan/scripts/generate_traffic.py:1).
+[scripts/generate_traffic.py](scripts/generate_traffic.py:1) creates traffic in two stages:
 
-Example:
+1. generate trips from scenario probabilities
+2. run `duarouter` to compute valid full routes on the chosen network
 
-```bash
-./.venv/bin/python scripts/generate_traffic.py --scenario evening_rush --seed 42 --steps 7200 --output sumo_data/routes.rou.xml
-```
-
-[train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:1) can also generate deterministic route banks under `training_routes/` when training across multiple scenarios.
+This avoids invalid direct edge-to-edge route definitions on larger corridor networks.
 
 ## 3. SUMO Startup
 
-When training or evaluation starts, the code:
+The training and evaluation code:
 
-1. prepares a runnable SUMO config, optionally overriding the route file
-2. rewrites relative SUMO asset paths to absolute paths for temporary configs
-3. starts SUMO through TraCI
-4. identifies the controlled traffic light
-5. builds a phase-to-lane mapping for the valid green phases
+1. loads the active SUMO config
+2. optionally overrides the route file
+3. rewrites relative file inputs to absolute paths for temporary configs
+4. starts SUMO through TraCI
 
-That mapping is important because RL decisions are phase-level, but the traffic measurements come from lanes.
+The active default config is [sumo_data/komitas.sumocfg](sumo_data/komitas.sumocfg:1).
 
-## 4. State Extraction
+## 4. Controlled TLS Set
 
-At each decision point, the controller builds a 7-feature state:
+At startup the code builds the active controlled set from [train.py](train.py:17):
 
-- normalized demand for each of the 5 green phases
-- normalized elapsed green time
-- normalized current phase position
+- `Komitas-Gyulbenkyan`
+- `Komitas-Vagharshyan`
+- `Komitas-Papazyan`
+- `Komitas-Vracakan`
+- `Komitas-Griboyedov`
+- `Komitas-Tigranyan`
 
-This happens in [train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:215).
+For each one, the code parses its traffic light logic and derives:
 
-## 5. Action Selection
+- valid stable green phases
+- nominal next-green transitions
+- local state and action dimensions
 
-During training:
+## 5. Local State Extraction
 
-- epsilon-greedy exploration is used
-- early episodes explore more
-- later episodes rely more on the DQN
+For each controlled TLS, the code:
 
-During testing and evaluation:
+1. maps green phases to their incoming lanes
+2. measures halting vehicles on those lanes
+3. builds a local state vector
 
-- the highest-Q action is chosen greedily
+This gives one local state per intersection, not one giant centralized state.
 
-The action space is:
+## 6. Local Action Selection
+
+For each controlled TLS, a local DQN chooses:
 
 - `EXTEND`
-- switch directly to one of the valid green phases
+- or a direct target green phase
 
-This is decoded in [train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:287).
+During training, actions are epsilon-greedy.
+During testing and evaluation, actions are greedy.
 
-## 6. Transition Handling
+## 7. Simultaneous Corridor Control
 
-Before switching from one green phase to another, the controller synthesizes a yellow transition from the current and target green state strings.
+All local actions are applied together at each control step.
 
-That transition:
+The control loop:
 
-- keeps movements green if they stay active in the target phase
-- sets withdrawn movements to yellow
-- keeps everything else red
+1. build local states for all controlled TLSs
+2. choose local actions for all controlled TLSs
+3. determine which TLSs need to switch
+4. apply yellow transitions for all switching TLSs
+5. apply target green states
+6. advance the simulation by the extension interval
 
-Then the controller applies the target green state. This logic lives in [train.py](/Users/macbook/Documents/komitas-vagharshyan/train.py:251) and is reused by [evaluate.py](/Users/macbook/Documents/komitas-vagharshyan/evaluate.py:1).
+This means the corridor is coordinated at the simulation-step level even though the policies are local.
 
-## 7. Reward And Learning
+## 8. Reward And Learning
 
-After each decision, the code measures:
+Each controlled TLS gets a local reward built from:
 
-- total queue
-- worst-lane queue
-- newly arrived vehicles
-- newly loaded vehicles
+- local queue reduction
+- local worst-lane improvement
+- a shared global throughput term
+- a small inflow penalty
+- an excess-green penalty
+- a switch penalty
 
-The reward then favors:
+Each TLS stores its own transitions in its own replay buffer, and each local DQN is trained from its own samples.
 
-- queue reduction
-- some protection against worst-lane starvation
-- moving vehicles through the network
+## 9. Model Output
 
-and penalizes:
+The saved model is now a bundle, not one plain single-intersection state dict.
 
-- inflow pressure
-- excessive green holding
-- unnecessary switching
+The bundle stores:
 
-Transitions are stored in replay memory, minibatches are sampled, and the DQN is updated against a target network.
+- controlled TLS IDs
+- one local state dict per TLS
+- local dimensions and metadata
 
-## 8. Outputs
+This is why the training, testing, and evaluation code all use shared load/save helpers rather than raw `torch.load()` into a single network.
 
-Normal training writes:
+## 10. Visual Testing
 
-```text
-dqn_model.pth
+[test_sim.py](test_sim.py:1) loads the model bundle and runs all six local controllers in `sumo-gui`.
+
+It prints, per decision:
+
+- TLS ID
+- current phase
+- elapsed green
+- local state
+- local Q-values
+- chosen action
+
+## 11. Quantitative Evaluation
+
+[evaluate.py](evaluate.py:1) compares:
+
+- default SUMO control over the corridor
+- MaxPressure adaptive control over the corridor
+- the trained RL control over the corridor
+
+The reported metrics are aggregated over the whole corridor. RL evaluation also records action counts, switch counts, and blocked-switch counts for diagnosing policy collapse or excessive phase changing.
+
+## 12. Multi-Scenario Evaluation
+
+[batch_evaluate.py](batch_evaluate.py:1) runs the same fixed-time, MaxPressure, and RL comparison over multiple scenarios and seeds and then averages the results.
+
+The current final-evaluation command is:
+
+```bash
+python batch_evaluate.py \
+    --model-path models/komitas_dqn_ep075.pth \
+    --scenarios morning_rush evening_rush off_peak corridor_stress \
+    --seeds 41 42 43 \
+    --steps 3600 \
+    --end-time 7200 \
+    --summary-json runs/v3/eval_ep075_summary.json
 ```
 
-The checkpoint-based final workflow can also write:
+The batch output includes per-route results, per-scenario means, overall mean ± std, and RL policy diagnostics.
 
-- periodic checkpoints under `checkpoints/`
-- a final selected model such as `dqn_model_final_v2.pth`
-- ranking summaries under the checkpoint directory
+## 13. Final Selection Workflow
 
-## 9. Visual Test
+[run_final_training.py](run_final_training.py:1) automates:
 
-[test_sim.py](/Users/macbook/Documents/komitas-vagharshyan/test_sim.py:1) runs the trained controller in `sumo-gui`.
+1. training with periodic checkpoints
+2. scenario generation
+3. checkpoint evaluation
+4. checkpoint ranking
+5. summary export
 
-Its role is qualitative:
-
-- watch the signal behavior
-- inspect printed Q-values and actions
-- verify the controller is switching sensibly
-
-## 10. Quantitative Evaluation
-
-[evaluate.py](/Users/macbook/Documents/komitas-vagharshyan/evaluate.py:1) compares:
-
-- the default SUMO traffic light controller
-- the trained RL controller
-
-It reports:
-
-- steps to clear the scenario
-- vehicles arrived
-- average queue per step
-- average lane wait per step
-- average trip duration
-- average waiting time
-- average time loss
-- maximum waiting time
-
-## 11. Final-Selection Workflow
-
-[run_final_training.py](/Users/macbook/Documents/komitas-vagharshyan/run_final_training.py:1) automates the full selection loop:
-
-1. train for a fixed number of episodes
-2. save checkpoints periodically
-3. generate evaluation route files
-4. evaluate each checkpoint across those routes
-5. rank checkpoints by average cross-scenario score
-6. write JSON and Markdown summaries
-
-This is the best workflow when you want a final submission model instead of just the last checkpoint.
+This is the strongest current workflow for selecting a final corridor controller.

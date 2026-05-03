@@ -4,7 +4,7 @@
 <neteditConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
 
     <input>
-        <sumocfg-file value="/Users/macbook/Documents/komitas-vagharshyan/sumo_data/komitas-vagharshyan.sumocfg"/>
+        <sumocfg-file value="sumo_data/komitas-vagharshyan.sumocfg"/>
         <sumo-net-file value="sumo_data/komitas-vagharshyan.net.xml"/>
     </input>
 
