@@ -207,14 +207,50 @@ This is more informative than a simple queue-only state, but still small enough 
 
 For each traffic light, the local action space is:
 
-- `EXTEND`
-- or direct selection of a target green phase
+- action `0`: `EXTEND` — keep the currently active green phase for another `EXTEND_STEP`
+- action `1 .. k`: select one of the `k` stable green phases as the target phase
 
 So if a traffic light has `k` green phases, its local action size is:
 
 ```text
 1 + k
 ```
+
+The names are therefore:
+
+```text
+0      = EXTEND current green
+1      = switch/select green phase 1
+2      = switch/select green phase 2
+...
+k      = switch/select green phase k
+```
+
+For example, if a traffic light has **two** green phases, the DQN technically has three output actions:
+
+```text
+0 = EXTEND current green
+1 = select green phase 1
+2 = select green phase 2
+```
+
+At runtime, invalid actions are masked. If the current green is phase 1 and switching is legally allowed, action `1` is invalid because it would select the already-active phase, so the effective choice is either:
+
+```text
+EXTEND phase 1
+or
+switch to phase 2
+```
+
+If the current green is phase 2, the effective choice is:
+
+```text
+EXTEND phase 2
+or
+switch to phase 1
+```
+
+Before `MIN_GREEN` is reached, only `EXTEND` is valid. This is why a two-green-phase intersection behaves exactly as "extend the current green or switch to the other green" once switching is allowed.
 
 This is more powerful than a simple fixed-cycle “switch to next phase” approach because the controller can prioritize the most urgent movement directly.
 

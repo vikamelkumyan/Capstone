@@ -62,7 +62,17 @@ The neighbor features provide upstream and downstream corridor context for impli
 For one traffic light, the local actions are:
 
 - `0`: `EXTEND` — keep the current green phase active for another `EXTEND_STEP` seconds
-- `1..k`: switch to a specific target green phase
+- `1..k`: select one of the `k` stable green phases as the target phase
+
+For example, if a traffic light has two green phases, the network has three raw outputs:
+
+```text
+0 = EXTEND current green
+1 = select green phase 1
+2 = select green phase 2
+```
+
+If phase 1 is already active, action `1` is masked, so the practical choice is `EXTEND phase 1` or `switch to phase 2`. If phase 2 is active, action `2` is masked, so the practical choice is `EXTEND phase 2` or `switch to phase 1`.
 
 This is stronger than a simple fixed-cycle "switch to next phase" controller because the agent can prioritize the most urgent movement directly.
 
