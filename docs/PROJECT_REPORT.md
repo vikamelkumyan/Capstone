@@ -673,14 +673,25 @@ This writes generated training plots under `runs/v3/plots/`. The final submissio
 - `docs/assets/final_results/training_overview.png` — reward, loss, and epsilon together
 - `docs/assets/final_results/reward_by_scenario.png` — reward separated by demand scenario
 - `docs/assets/final_results/loss_by_scenario.png` — loss separated by demand scenario
+- `docs/assets/final_results/evaluation_wait_by_scenario.svg` — average waiting time by scenario and controller
+- `docs/assets/final_results/evaluation_delta_vs_fixed.svg` — final RL percentage change relative to fixed-time
+- `docs/assets/final_results/policy_diagnostics.svg` — dominant-action diagnostics for each controlled traffic light
 
-The generated figures are included in this report:
+The training figures are included in this report:
 
 ![Training overview](assets/final_results/training_overview.png)
 
 ![Reward by scenario](assets/final_results/reward_by_scenario.png)
 
 ![Loss by scenario](assets/final_results/loss_by_scenario.png)
+
+The evaluation figures are generated from `docs/assets/final_results/eval_ep075_summary.json`:
+
+```bash
+python scripts/plot_evaluation.py \
+    --summary-json docs/assets/final_results/eval_ep075_summary.json \
+    --output-dir docs/assets/final_results
+```
 
 ### Step 5 — Checkpoint-based final selection
 
@@ -792,6 +803,8 @@ Per-route waiting-time summary:
 | corridor_stress | 42 | 1804.58 | 1784.55 | 1717.60 | 6537.00 | 6608.00 |
 | corridor_stress | 43 | 2268.96 | 1610.62 | 1744.75 | 6539.00 | 6489.00 |
 
+![Average waiting time by scenario](assets/final_results/evaluation_wait_by_scenario.svg)
+
 Overall mean ± standard deviation across all 12 scenario/seed route files:
 
 | Metric | Fixed-Time | MaxPressure | RL | Δ% RL vs Fixed |
@@ -804,6 +817,8 @@ Overall mean ± standard deviation across all 12 scenario/seed route files:
 | Avg Waiting Time (s) | 722.44 ± 809.84 | 708.48 ± 635.39 | 679.79 ± 708.37 | +5.9 % |
 | Avg Time Loss (s) | 811.30 ± 848.99 | 790.42 ± 662.97 | 761.13 ± 739.99 | +6.2 % |
 | Max Waiting Time (s) | 4288.50 ± 2646.96 | 5445.83 ± 1817.79 | 3515.83 ± 3003.53 | +18.0 % |
+
+![RL percentage change versus fixed-time](assets/final_results/evaluation_delta_vs_fixed.svg)
 
 Per-scenario averages show that the improvement is not uniform:
 
@@ -825,6 +840,8 @@ Per-scenario averages show that the improvement is not uniform:
 The redesigned DQN controller therefore improves the main trip-level delay metrics on average: waiting time, trip duration, time loss, queue, and maximum waiting time. It also fixes the earlier off-peak collapse and performs especially well on evening rush. Relative to MaxPressure, RL improves average waiting time by about 4.0 % (`708.48 s` to `679.79 s`), which is competitive but just below the stricter 5 % improvement threshold discussed in §8.6. It still has a 6.5 % throughput deficit relative to fixed-time and underperforms on morning rush. This indicates that the learned local policies improved adaptive delay control but did not fully preserve the progression benefits of the fixed-time morning-rush plan.
 
 RL policy diagnostics showed stable behavior rather than phase thrashing: the dominant action at every TLS was `EXTEND`, dominance ranged from 75.5 % to 88.2 %, and no blocked switches occurred because invalid switch actions were masked.
+
+![RL policy diagnostics](assets/final_results/policy_diagnostics.svg)
 
 ### 19.4 Interpretation of Final Results
 
