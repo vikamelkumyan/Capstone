@@ -19,25 +19,19 @@
 <line x1="910.0" y1="70" x2="910.0" y2="470" stroke="#E5E7EB"/>
 <text x="910.0" y="492" font-family="Arial, sans-serif" font-size="11" font-weight="400" text-anchor="middle" fill="#4B5563">20%</text>
 <line x1="510.0" y1="70" x2="510.0" y2="470" stroke="#111827"/>
-<text x="194" y="103.71428571428572" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Vehicles Arrived</text>
-<rect x="380.0" y="84.3" width="130.0" height="28.6" fill="#DC2626" rx="3"/>
-<text x="372.0" y="103.71428571428572" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#111827">-6.5%</text>
-<text x="194" y="160.85714285714283" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Queue / Step</text>
-<rect x="510.0" y="141.4" width="184.0" height="28.6" fill="#059669" rx="3"/>
-<text x="702.0" y="160.85714285714283" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+9.2%</text>
-<text x="194" y="218.0" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Lane Wait / Step</text>
-<rect x="282.0" y="198.6" width="228.0" height="28.6" fill="#DC2626" rx="3"/>
-<text x="274.0" y="218.0" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="end" fill="#111827">-11.4%</text>
-<text x="194" y="275.14285714285717" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Trip Duration</text>
-<rect x="510.0" y="255.7" width="110.0" height="28.6" fill="#059669" rx="3"/>
-<text x="628.0" y="275.14285714285717" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+5.5%</text>
-<text x="194" y="332.2857142857143" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Waiting Time</text>
-<rect x="510.0" y="312.9" width="118.0" height="28.6" fill="#059669" rx="3"/>
-<text x="636.0" y="332.2857142857143" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+5.9%</text>
-<text x="194" y="389.42857142857144" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Time Loss</text>
-<rect x="510.0" y="370.0" width="124.0" height="28.6" fill="#059669" rx="3"/>
-<text x="642.0" y="389.42857142857144" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+6.2%</text>
-<text x="194" y="446.5714285714286" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Max Waiting Time</text>
-<rect x="510.0" y="427.1" width="360.0" height="28.6" fill="#059669" rx="3"/>
-<text x="878.0" y="446.5714285714286" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+18.0%</text>
+<text x="194" y="117.2" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Queue / Step</text>
+<rect x="510.0" y="90.0" width="184.0" height="40.0" fill="#059669" rx="3"/>
+<text x="702.0" y="117.2" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+9.2%</text>
+<text x="194" y="197.2" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Trip Duration</text>
+<rect x="510.0" y="170.0" width="110.0" height="40.0" fill="#059669" rx="3"/>
+<text x="628.0" y="197.2" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+5.5%</text>
+<text x="194" y="277.2" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Waiting Time</text>
+<rect x="510.0" y="250.0" width="118.0" height="40.0" fill="#059669" rx="3"/>
+<text x="636.0" y="277.2" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+5.9%</text>
+<text x="194" y="357.2" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Avg Time Loss</text>
+<rect x="510.0" y="330.0" width="124.0" height="40.0" fill="#059669" rx="3"/>
+<text x="642.0" y="357.2" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+6.2%</text>
+<text x="194" y="437.2" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="end" fill="#111827">Max Waiting Time</text>
+<rect x="510.0" y="410.0" width="360.0" height="40.0" fill="#059669" rx="3"/>
+<text x="878.0" y="437.2" font-family="Arial, sans-serif" font-size="12" font-weight="700" text-anchor="start" fill="#111827">+18.0%</text>
 </svg>

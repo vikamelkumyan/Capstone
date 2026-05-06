@@ -131,9 +131,7 @@ def plot_wait_by_scenario(data, output):
 
 def plot_overall_delta(data, output):
     ordered = [
-        ("vehicles_arrived", "Vehicles Arrived"),
         ("avg_queue_per_step", "Avg Queue / Step"),
-        ("avg_lane_wait_per_step", "Avg Lane Wait / Step"),
         ("avg_trip_duration", "Avg Trip Duration"),
         ("avg_waiting_time", "Avg Waiting Time"),
         ("avg_time_loss", "Avg Time Loss"),

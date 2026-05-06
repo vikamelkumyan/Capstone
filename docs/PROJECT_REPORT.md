@@ -758,8 +758,9 @@ This writes generated training plots under `runs/v3/plots/`. The final submissio
 - `docs/assets/final_results/reward_by_scenario.png` — reward separated by demand scenario
 - `docs/assets/final_results/loss_by_scenario.png` — loss separated by demand scenario
 - `docs/assets/final_results/evaluation_wait_by_scenario.svg` — average waiting time by scenario and controller
-- `docs/assets/final_results/evaluation_delta_vs_fixed.svg` — final RL percentage change relative to fixed-time
+- `docs/assets/final_results/evaluation_delta_vs_fixed.svg` — final RL percentage change relative to fixed-time, excluding throughput and lane-wait diagnostics
 - `docs/assets/final_results/policy_diagnostics.svg` — dominant-action diagnostics for each controlled traffic light
+- `docs/assets/final_results/single_intersection_result.svg` — historical single-intersection delay/queue comparison
 
 The training figures are included in this report:
 
@@ -854,7 +855,26 @@ The greedy policy was worse than random exploration. Evaluation against the fixe
 
 Root causes identified: multi-agent non-stationarity (per-agent local reward) and delta-based reward misalignment with evaluation metrics. See §7.1.
 
-### 19.3 Post-Redesign Results
+### 19.3 Single-Intersection Reference Result
+
+Before scaling to the full six-intersection corridor, the project trained and evaluated a DQN on the Komitas-Vagharshyan single-intersection setup. The following evening-rush evaluation is retained as a historical reference because it shows that the phase-level DQN abstraction worked in the simpler isolated-intersection case before the harder corridor coordination problem was introduced.
+
+The table focuses on operational delay and queue metrics. Throughput was unchanged in this run, and the internal lane-wait aggregate is omitted here to keep the comparison focused on the metrics most directly interpreted by drivers and evaluators.
+
+| Metric | Fixed-Time | RL | Δ% RL vs Fixed |
+|---|---:|---:|---:|
+| Steps | 8058 | 8375 | −3.9 % |
+| Avg Queue / Step | 3.14 | 2.54 | +19.1 % |
+| Avg Trip Duration (s) | 17.15 | 15.55 | +9.3 % |
+| Avg Waiting Time (s) | 8.70 | 7.04 | +19.1 % |
+| Avg Time Loss (s) | 12.27 | 10.67 | +13.0 % |
+| Max Waiting Time (s) | 139.00 | 48.00 | +65.5 % |
+
+![Single-intersection RL change versus fixed-time](assets/final_results/single_intersection_result.svg)
+
+The single-intersection result is much cleaner than the corridor result: RL reduces queue, trip duration, waiting time, time loss, and maximum waiting time while preserving throughput. The only weaker metric is total clearance steps, meaning the RL run had a slightly longer tail after the main demand period. This supports the project narrative that isolated-intersection RL was feasible, while corridor-level RL introduced a harder coordination problem.
+
+### 19.4 Post-Redesign Corridor Results
 
 The selected final model is `models/komitas_dqn_ep075.pth`. It was chosen from the episode-75 checkpoint because nearby checkpoints showed DQN drift: on the default route, episode 75 preserved throughput much better than episode 50 and episode 100 while improving trip-level delay metrics.
 
@@ -927,7 +947,7 @@ RL policy diagnostics showed stable behavior rather than phase thrashing: the do
 
 ![RL policy diagnostics](assets/final_results/policy_diagnostics.svg)
 
-### 19.4 Interpretation of Final Results
+### 19.5 Interpretation of Final Results
 
 The final numbers support three conclusions.
 
