@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="980" height="520" viewBox="0 0 980 520">
 <rect width="100%" height="100%" fill="#FFFFFF"/>
-<text x="490.0" y="34" font-family="Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#111827">Multi-Intersection Delay Improvements Over Fixed-Time</text>
+<text x="490.0" y="34" font-family="Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#111827">Multi-Intersection RL Improvements Over Fixed-Time</text>
 <text x="490.0" y="56" font-family="Arial, sans-serif" font-size="13" font-weight="400" text-anchor="middle" fill="#374151">Positive values mean the RL controller reduced queueing, delay, or waiting time.</text>
 <line x1="210.0" y1="70" x2="210.0" y2="470" stroke="#E5E7EB"/>
 <text x="210.0" y="494" font-family="Arial, sans-serif" font-size="13" font-weight="400" text-anchor="middle" fill="#374151">0%</text>

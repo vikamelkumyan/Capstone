@@ -8,7 +8,7 @@
     .value { font: 700 15px Arial, sans-serif; fill: #111827; }
   </style>
 
-  <text x="490" y="34" text-anchor="middle" class="title">Single-Intersection Delay Improvements Over Fixed-Time</text>
+  <text x="490" y="34" text-anchor="middle" class="title">Single-Intersection RL Improvements Over Fixed-Time</text>
   <text x="490" y="56" text-anchor="middle" class="subtitle">
     Komitas-Vagharshyan evening-rush evaluation. Positive values mean lower delay/queue.
   </text>

@@ -167,7 +167,7 @@ def plot_overall_delta(data, output):
         svg_text(
             width / 2,
             34,
-            "Multi-Intersection Delay Improvements Over Fixed-Time",
+            "Multi-Intersection RL Improvements Over Fixed-Time",
             22,
             "middle",
             "700",
