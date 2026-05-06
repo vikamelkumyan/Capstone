@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 COLORS = {
-    "fixed_time": "#8A95A5",
+    "fixed_time": "#8B2F2F",
     "max_pressure": "#5B78A7",
     "rl": "#377684",
     "good": "#377684",
@@ -134,7 +134,11 @@ def plot_wait_by_scenario(data, output):
         )
         legend_x += 150
 
-    body.append(svg_text(22, margin_top + chart_h / 2, "Seconds", 14, "middle", "700"))
+    body.append(
+        '<text x="24" y="270.0" font-family="Arial, sans-serif" '
+        'font-size="14" font-weight="700" text-anchor="middle" '
+        'fill="#111827" transform="rotate(-90 24 270.0)">Seconds</text>'
+    )
     write_svg(output, width, height, body)
 
 
