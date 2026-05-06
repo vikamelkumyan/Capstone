@@ -2,13 +2,13 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <style>
     .title { font: 700 22px Arial, sans-serif; fill: #111827; }
-    .subtitle { font: 400 13px Arial, sans-serif; fill: #4B5563; }
-    .label { font: 700 12px Arial, sans-serif; fill: #111827; }
-    .tick { font: 400 11px Arial, sans-serif; fill: #4B5563; }
-    .value { font: 700 12px Arial, sans-serif; fill: #111827; }
+    .subtitle { font: 400 13px Arial, sans-serif; fill: #374151; }
+    .label { font: 700 14px Arial, sans-serif; fill: #111827; }
+    .tick { font: 400 13px Arial, sans-serif; fill: #374151; }
+    .value { font: 700 15px Arial, sans-serif; fill: #111827; }
   </style>
 
-  <text x="490" y="34" text-anchor="middle" class="title">Single-Intersection RL Change vs Fixed-Time</text>
+  <text x="490" y="34" text-anchor="middle" class="title">Single-Intersection Delay Improvements Over Fixed-Time</text>
   <text x="490" y="56" text-anchor="middle" class="subtitle">
     Komitas-Vagharshyan evening-rush evaluation. Positive values mean lower delay/queue.
   </text>

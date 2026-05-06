@@ -6,11 +6,11 @@ from pathlib import Path
 
 
 COLORS = {
-    "fixed_time": "#4B5563",
-    "max_pressure": "#2563EB",
+    "fixed_time": "#8A95A5",
+    "max_pressure": "#5B78A7",
     "rl": "#377684",
     "good": "#377684",
-    "bad": "#DC2626",
+    "bad": "#B91C1C",
     "neutral": "#6B7280",
 }
 
@@ -68,16 +68,12 @@ def plot_wait_by_scenario(data, output):
 
     body = [
         svg_text(
-            width / 2, 32, "Average Waiting Time by Scenario", 20, "middle", "700"
-        ),
-        svg_text(
             width / 2,
-            54,
-            "Lower is better. Mean across seeds 41-43; morning_rush omitted for readability.",
-            12,
+            38,
+            "Average Vehicle Waiting Time by Traffic Scenario",
+            22,
             "middle",
-            "400",
-            "#4B5563",
+            "700",
         ),
     ]
 
@@ -88,7 +84,7 @@ def plot_wait_by_scenario(data, output):
             f'<line x1="{margin_left}" y1="{y:.1f}" x2="{width - margin_right}" y2="{y:.1f}" stroke="#E5E7EB"/>'
         )
         body.append(
-            svg_text(margin_left - 12, y + 4, str(tick), 11, "end", fill="#4B5563")
+            svg_text(margin_left - 12, y + 5, str(tick), 13, "end", fill="#374151")
         )
     body.append(
         f'<line x1="{margin_left}" y1="{margin_top}" x2="{margin_left}" y2="{margin_top + chart_h}" stroke="#111827"/>'
@@ -104,7 +100,7 @@ def plot_wait_by_scenario(data, output):
         center = group_x + group_w / 2
         label = scenario_labels[scenario]
         body.append(
-            svg_text(center, margin_top + chart_h + 34, label, 12, "middle", "600")
+            svg_text(center, margin_top + chart_h + 38, label, 15, "middle", "700")
         )
 
         for j, controller in enumerate(controllers):
@@ -117,7 +113,13 @@ def plot_wait_by_scenario(data, output):
             )
             body.append(
                 svg_text(
-                    x + bar_w / 2, y - 6, f"{value:.0f}", 10, "middle", fill="#111827"
+                    x + bar_w / 2,
+                    y - 7,
+                    f"{value:.0f}",
+                    14,
+                    "middle",
+                    "700",
+                    "#111827",
                 )
             )
 
@@ -127,10 +129,12 @@ def plot_wait_by_scenario(data, output):
         body.append(
             f'<rect x="{legend_x}" y="{legend_y - 11}" width="14" height="14" fill="{COLORS[controller]}" rx="2"/>'
         )
-        body.append(svg_text(legend_x + 20, legend_y, controller_label(controller), 12))
+        body.append(
+            svg_text(legend_x + 20, legend_y + 1, controller_label(controller), 14)
+        )
         legend_x += 150
 
-    body.append(svg_text(20, margin_top + chart_h / 2, "Seconds", 12, "middle", "600"))
+    body.append(svg_text(22, margin_top + chart_h / 2, "Seconds", 14, "middle", "700"))
     write_svg(output, width, height, body)
 
 
@@ -157,7 +161,21 @@ def plot_overall_delta(data, output):
 
     body = [
         svg_text(
-            width / 2, 32, "RL Percentage Change vs Fixed-Time", 20, "middle", "700"
+            width / 2,
+            34,
+            "RL Improvements Over Fixed-Time Control",
+            22,
+            "middle",
+            "700",
+        ),
+        svg_text(
+            width / 2,
+            56,
+            "Positive values mean the RL controller reduced queueing, delay, or waiting time.",
+            13,
+            "middle",
+            "400",
+            "#374151",
         ),
     ]
 
@@ -168,7 +186,7 @@ def plot_overall_delta(data, output):
         )
         body.append(
             svg_text(
-                x, margin_top + chart_h + 22, f"{tick}%", 11, "middle", fill="#4B5563"
+                x, margin_top + chart_h + 24, f"{tick}%", 13, "middle", fill="#374151"
             )
         )
     body.append(
@@ -185,7 +203,7 @@ def plot_overall_delta(data, output):
         bar_w = abs(x_value - zero_x)
         color = COLORS["good"] if value > 0 else COLORS["bad"]
         body.append(
-            svg_text(margin_left - 16, y + bar_h * 0.68, label, 12, "end", "600")
+            svg_text(margin_left - 16, y + bar_h * 0.68, label, 14, "end", "700")
         )
         body.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" fill="{color}" rx="3"/>'
@@ -193,7 +211,7 @@ def plot_overall_delta(data, output):
         label_x = x_value + 8
         anchor = "start"
         body.append(
-            svg_text(label_x, y + bar_h * 0.68, f"{value:+.1f}%", 12, anchor, "700")
+            svg_text(label_x, y + bar_h * 0.68, f"{value:+.1f}%", 15, anchor, "700")
         )
 
     write_svg(output, width, height, body)
@@ -209,16 +227,16 @@ def plot_policy_diagnostics(data, output):
 
     body = [
         svg_text(
-            width / 2, 32, "RL Policy Diagnostics by Traffic Light", 20, "middle", "700"
+            width / 2, 32, "RL Action Stability by Traffic Light", 22, "middle", "700"
         ),
         svg_text(
             width / 2,
             54,
             "Dominant action share; labels show total switches. Blocked switches were zero for every TLS.",
-            12,
+            13,
             "middle",
             "400",
-            "#4B5563",
+            "#374151",
         ),
     ]
 
@@ -229,7 +247,7 @@ def plot_policy_diagnostics(data, output):
         )
         body.append(
             svg_text(
-                x, margin_top + chart_h + 22, f"{tick}%", 11, "middle", fill="#4B5563"
+                x, margin_top + chart_h + 24, f"{tick}%", 13, "middle", fill="#374151"
             )
         )
 
@@ -243,9 +261,9 @@ def plot_policy_diagnostics(data, output):
                 margin_left - 16,
                 y + bar_h * 0.68,
                 row["tls"].replace("Komitas-", ""),
-                12,
+                14,
                 "end",
-                "600",
+                "700",
             )
         )
         body.append(
@@ -256,7 +274,7 @@ def plot_policy_diagnostics(data, output):
                 margin_left + bar_w + 8,
                 y + bar_h * 0.68,
                 f'{row["dominance_percent"]:.1f}% | {row["switches"]} switches',
-                12,
+                14,
                 "start",
                 "600",
             )
