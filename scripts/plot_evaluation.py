@@ -71,7 +71,7 @@ def plot_wait_by_scenario(data, output):
             width / 2,
             38,
             "Multi-Intersection Average Vehicle Waiting Time by Scenario",
-            22,
+            26,
             "middle",
             "700",
         ),
@@ -84,7 +84,7 @@ def plot_wait_by_scenario(data, output):
             f'<line x1="{margin_left}" y1="{y:.1f}" x2="{width - margin_right}" y2="{y:.1f}" stroke="#E5E7EB"/>'
         )
         body.append(
-            svg_text(margin_left - 12, y + 5, str(tick), 13, "end", fill="#374151")
+            svg_text(margin_left - 12, y + 5, str(tick), 15, "end", fill="#374151")
         )
     body.append(
         f'<line x1="{margin_left}" y1="{margin_top}" x2="{margin_left}" y2="{margin_top + chart_h}" stroke="#111827"/>'
@@ -100,7 +100,7 @@ def plot_wait_by_scenario(data, output):
         center = group_x + group_w / 2
         label = scenario_labels[scenario]
         body.append(
-            svg_text(center, margin_top + chart_h + 38, label, 15, "middle", "700")
+            svg_text(center, margin_top + chart_h + 38, label, 17, "middle", "700")
         )
 
         for j, controller in enumerate(controllers):
@@ -116,7 +116,7 @@ def plot_wait_by_scenario(data, output):
                     x + bar_w / 2,
                     y - 7,
                     f"{value:.0f}",
-                    14,
+                    16,
                     "middle",
                     "700",
                     "#111827",
@@ -130,13 +130,13 @@ def plot_wait_by_scenario(data, output):
             f'<rect x="{legend_x}" y="{legend_y - 11}" width="14" height="14" fill="{COLORS[controller]}" rx="2"/>'
         )
         body.append(
-            svg_text(legend_x + 20, legend_y + 1, controller_label(controller), 14)
+            svg_text(legend_x + 20, legend_y + 2, controller_label(controller), 16)
         )
         legend_x += 150
 
     body.append(
         '<text x="24" y="270.0" font-family="Arial, sans-serif" '
-        'font-size="14" font-weight="700" text-anchor="middle" '
+        'font-size="16" font-weight="700" text-anchor="middle" '
         'fill="#111827" transform="rotate(-90 24 270.0)">Seconds</text>'
     )
     write_svg(output, width, height, body)
@@ -206,20 +206,11 @@ def plot_wait_summary_table(data, output):
     body = [
         svg_text(
             width / 2,
-            36,
+            44,
             "Multi-Intersection Average Vehicle Waiting Time",
-            23,
+            27,
             "middle",
             "700",
-        ),
-        svg_text(
-            width / 2,
-            60,
-            "Mean seconds per vehicle across seeds 41-43. Lower values are better.",
-            13,
-            "middle",
-            "400",
-            "#374151",
         ),
         f'<rect x="{x0}" y="{y0}" width="{sum(col_widths)}" height="{row_h}" fill="#111827" rx="8"/>',
     ]
@@ -227,7 +218,7 @@ def plot_wait_summary_table(data, output):
     for i, header in enumerate(headers):
         anchor = aligns[i]
         x = col_x[i] + (16 if anchor == "start" else col_widths[i] - 16)
-        body.append(svg_text(x, y0 + 39, header, 14, anchor, "700", "#FFFFFF"))
+        body.append(svg_text(x, y0 + 40, header, 16, anchor, "700", "#FFFFFF"))
 
     for r, (scenario, values, delta, best) in enumerate(rows):
         y = y0 + row_h * (r + 1)
@@ -268,7 +259,7 @@ def plot_wait_summary_table(data, output):
                 color = delta_color
             elif c == 5:
                 color = best_color
-            body.append(svg_text(x, y + 39, value, 15, anchor, weight, color))
+            body.append(svg_text(x, y + 40, value, 17, anchor, weight, color))
 
     table_h = row_h * (len(rows) + 1)
     body.append(
@@ -303,18 +294,9 @@ def plot_overall_delta(data, output):
             width / 2,
             34,
             "Multi-Intersection RL Improvements Over Fixed-Time",
-            22,
+            26,
             "middle",
             "700",
-        ),
-        svg_text(
-            width / 2,
-            56,
-            "Positive values mean the RL controller reduced queueing, delay, or waiting time.",
-            13,
-            "middle",
-            "400",
-            "#374151",
         ),
     ]
 
@@ -325,7 +307,7 @@ def plot_overall_delta(data, output):
         )
         body.append(
             svg_text(
-                x, margin_top + chart_h + 24, f"{tick}%", 13, "middle", fill="#374151"
+                x, margin_top + chart_h + 24, f"{tick}%", 15, "middle", fill="#374151"
             )
         )
     body.append(
@@ -342,7 +324,7 @@ def plot_overall_delta(data, output):
         bar_w = abs(x_value - zero_x)
         color = COLORS["good"] if value > 0 else COLORS["bad"]
         body.append(
-            svg_text(margin_left - 16, y + bar_h * 0.68, label, 14, "end", "700")
+            svg_text(margin_left - 16, y + bar_h * 0.68, label, 16, "end", "700")
         )
         body.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" fill="{color}" rx="3"/>'
@@ -350,7 +332,7 @@ def plot_overall_delta(data, output):
         label_x = x_value + 8
         anchor = "start"
         body.append(
-            svg_text(label_x, y + bar_h * 0.68, f"{value:+.1f}%", 15, anchor, "700")
+            svg_text(label_x, y + bar_h * 0.68, f"{value:+.1f}%", 17, anchor, "700")
         )
 
     write_svg(output, width, height, body)
@@ -369,18 +351,9 @@ def plot_policy_diagnostics(data, output):
             width / 2,
             32,
             "Multi-Intersection RL Action Stability by Traffic Light",
-            22,
+            25,
             "middle",
             "700",
-        ),
-        svg_text(
-            width / 2,
-            54,
-            "Dominant action share; labels show total switches. Blocked switches were zero for every TLS.",
-            13,
-            "middle",
-            "400",
-            "#374151",
         ),
     ]
 
@@ -391,7 +364,7 @@ def plot_policy_diagnostics(data, output):
         )
         body.append(
             svg_text(
-                x, margin_top + chart_h + 24, f"{tick}%", 13, "middle", fill="#374151"
+                x, margin_top + chart_h + 24, f"{tick}%", 15, "middle", fill="#374151"
             )
         )
 
@@ -405,7 +378,7 @@ def plot_policy_diagnostics(data, output):
                 margin_left - 16,
                 y + bar_h * 0.68,
                 row["tls"].replace("Komitas-", ""),
-                14,
+                16,
                 "end",
                 "700",
             )
@@ -418,7 +391,7 @@ def plot_policy_diagnostics(data, output):
                 margin_left + bar_w + 8,
                 y + bar_h * 0.68,
                 f'{row["dominance_percent"]:.1f}% | {row["switches"]} switches',
-                14,
+                16,
                 "start",
                 "600",
             )
