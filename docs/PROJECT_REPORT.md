@@ -166,6 +166,18 @@ Each controlled traffic light has its own DQN:
 
 The networks are created in [train.py](train.py:166).
 
+The architecture of each local policy network is:
+
+```text
+state_dim -> 128 -> 128 -> action_dim
+```
+
+where `state_dim = k + 13`, `action_dim = 1 + k`, and `k` is the number of stable green phases for that traffic light. The output layer does not produce probabilities; it produces one Q-value per action. During action selection, invalid actions are masked and the controller chooses the valid action with the highest Q-value.
+
+![Local DQN architecture](assets/final_results/dqn_architecture.svg)
+
+*Figure 6. Local DQN architecture used by each controlled traffic light. The same structure is reused for all intersections, while the input/output dimensions change with the number of green phases.*
+
 ### 4.2 Local State
 
 For one intersection, the local state contains:
