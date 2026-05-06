@@ -147,21 +147,12 @@ def plot_overall_delta(data, output):
     margin_top, margin_bottom = 70, 50
     chart_w = width - margin_left - margin_right
     chart_h = height - margin_top - margin_bottom
-    axis_min, axis_max = -15, 20
-    zero_x = margin_left + ((0 - axis_min) / (axis_max - axis_min)) * chart_w
+    axis_min, axis_max = 0, 20
+    zero_x = margin_left
 
     body = [
         svg_text(
             width / 2, 32, "RL Percentage Change vs Fixed-Time", 20, "middle", "700"
-        ),
-        svg_text(
-            width / 2,
-            54,
-            "Positive values are improvements for delay metrics; vehicles arrived is a throughput metric.",
-            12,
-            "middle",
-            "400",
-            "#4B5563",
         ),
     ]
 
@@ -184,7 +175,8 @@ def plot_overall_delta(data, output):
         y = margin_top + i * row_h + row_h * 0.25
         bar_h = row_h * 0.5
         x_value = margin_left + ((value - axis_min) / (axis_max - axis_min)) * chart_w
-        x = min(zero_x, x_value)
+        x_value = max(margin_left, min(width - margin_right, x_value))
+        x = zero_x
         bar_w = abs(x_value - zero_x)
         color = COLORS["good"] if value > 0 else COLORS["bad"]
         body.append(
@@ -193,8 +185,8 @@ def plot_overall_delta(data, output):
         body.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" fill="{color}" rx="3"/>'
         )
-        label_x = x_value + (8 if value >= 0 else -8)
-        anchor = "start" if value >= 0 else "end"
+        label_x = x_value + 8
+        anchor = "start"
         body.append(
             svg_text(label_x, y + bar_h * 0.68, f"{value:+.1f}%", 12, anchor, "700")
         )
