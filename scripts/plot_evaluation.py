@@ -70,7 +70,7 @@ def plot_wait_by_scenario(data, output):
         svg_text(
             width / 2,
             38,
-            "Average Vehicle Waiting Time by Traffic Scenario",
+            "Multi-Intersection Average Vehicle Waiting Time by Scenario",
             22,
             "middle",
             "700",
@@ -163,7 +163,7 @@ def plot_overall_delta(data, output):
         svg_text(
             width / 2,
             34,
-            "RL Improvements Over Fixed-Time Control",
+            "Multi-Intersection Delay Improvements Over Fixed-Time",
             22,
             "middle",
             "700",
@@ -227,7 +227,12 @@ def plot_policy_diagnostics(data, output):
 
     body = [
         svg_text(
-            width / 2, 32, "RL Action Stability by Traffic Light", 22, "middle", "700"
+            width / 2,
+            32,
+            "Multi-Intersection RL Action Stability by Traffic Light",
+            22,
+            "middle",
+            "700",
         ),
         svg_text(
             width / 2,
