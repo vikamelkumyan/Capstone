@@ -14,14 +14,14 @@
 <text x="78" y="110.36363636363637" font-family="Arial, sans-serif" font-size="11" font-weight="400" text-anchor="end" fill="#4B5563">2000</text>
 <line x1="90" y1="70" x2="90" y2="470" stroke="#111827"/>
 <line x1="90" y1="470" x2="950" y2="470" stroke="#111827"/>
-<text x="233.33333333333334" y="504" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#111827">corridor stress</text>
+<text x="233.33333333333334" y="504" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#111827">stress test</text>
 <rect x="170.3" y="105.1" width="42" height="364.9" fill="#4B5563" rx="3"/>
 <text x="191.33333333333334" y="99.14545454545453" font-family="Arial, sans-serif" font-size="10" font-weight="400" text-anchor="middle" fill="#111827">2007</text>
 <rect x="220.3" y="163.3" width="42" height="306.7" fill="#2563EB" rx="3"/>
 <text x="241.33333333333334" y="157.34545454545457" font-family="Arial, sans-serif" font-size="10" font-weight="400" text-anchor="middle" fill="#111827">1687</text>
 <rect x="270.3" y="158.3" width="42" height="311.7" fill="#377684" rx="3"/>
 <text x="291.33333333333337" y="152.29090909090905" font-family="Arial, sans-serif" font-size="10" font-weight="400" text-anchor="middle" fill="#111827">1714</text>
-<text x="520.0" y="504" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#111827">evening rush</text>
+<text x="520.0" y="504" font-family="Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#111827">rush hour</text>
 <rect x="457.0" y="425.5" width="42" height="44.5" fill="#4B5563" rx="3"/>
 <text x="478.0" y="419.5090909090909" font-family="Arial, sans-serif" font-size="10" font-weight="400" text-anchor="middle" fill="#111827">245</text>
 <rect x="507.0" y="433.2" width="42" height="36.8" fill="#2563EB" rx="3"/>

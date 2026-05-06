@@ -45,6 +45,11 @@ def controller_label(controller):
 
 def plot_wait_by_scenario(data, output):
     scenarios = ["corridor_stress", "evening_rush", "off_peak"]
+    scenario_labels = {
+        "corridor_stress": "stress test",
+        "evening_rush": "rush hour",
+        "off_peak": "off peak",
+    }
     controllers = ["fixed_time", "max_pressure", "rl"]
     means = {
         (row["scenario"], row["controller"]): row["avg_wait"]
@@ -97,7 +102,7 @@ def plot_wait_by_scenario(data, output):
     for i, scenario in enumerate(scenarios):
         group_x = margin_left + i * group_w
         center = group_x + group_w / 2
-        label = scenario.replace("_", " ")
+        label = scenario_labels[scenario]
         body.append(
             svg_text(center, margin_top + chart_h + 34, label, 12, "middle", "600")
         )
