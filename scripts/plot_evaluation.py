@@ -44,7 +44,7 @@ def controller_label(controller):
 
 
 def plot_wait_by_scenario(data, output):
-    scenarios = ["corridor_stress", "evening_rush", "morning_rush", "off_peak"]
+    scenarios = ["corridor_stress", "evening_rush", "off_peak"]
     controllers = ["fixed_time", "max_pressure", "rl"]
     means = {
         (row["scenario"], row["controller"]): row["avg_wait"]
@@ -68,7 +68,7 @@ def plot_wait_by_scenario(data, output):
         svg_text(
             width / 2,
             54,
-            "Lower is better. Mean across seeds 41-43.",
+            "Lower is better. Mean across seeds 41-43; morning_rush omitted for readability.",
             12,
             "middle",
             "400",

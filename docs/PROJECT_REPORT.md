@@ -757,7 +757,7 @@ This writes generated training plots under `runs/v3/plots/`. The final submissio
 - `docs/assets/final_results/training_overview.png` — reward, loss, and epsilon together
 - `docs/assets/final_results/reward_by_scenario.png` — reward separated by demand scenario
 - `docs/assets/final_results/loss_by_scenario.png` — loss separated by demand scenario
-- `docs/assets/final_results/evaluation_wait_by_scenario.svg` — average waiting time by scenario and controller
+- `docs/assets/final_results/evaluation_wait_by_scenario.svg` — average waiting time by scenario and controller, excluding `morning_rush`
 - `docs/assets/final_results/evaluation_delta_vs_fixed.svg` — final RL percentage change relative to fixed-time, excluding throughput and lane-wait diagnostics
 - `docs/assets/final_results/policy_diagnostics.svg` — dominant-action diagnostics for each controlled traffic light
 - `docs/assets/final_results/single_intersection_result.svg` — historical single-intersection delay/queue comparison
@@ -859,11 +859,10 @@ Root causes identified: multi-agent non-stationarity (per-agent local reward) an
 
 Before scaling to the full six-intersection corridor, the project trained and evaluated a DQN on the Komitas-Vagharshyan single-intersection setup. The following evening-rush evaluation is retained as a historical reference because it shows that the phase-level DQN abstraction worked in the simpler isolated-intersection case before the harder corridor coordination problem was introduced.
 
-The table focuses on operational delay and queue metrics. Throughput was unchanged in this run, and the internal lane-wait aggregate is omitted here to keep the comparison focused on the metrics most directly interpreted by drivers and evaluators.
+The table focuses on operational delay and queue metrics. Throughput was unchanged in this run, while total clearance steps and the internal lane-wait aggregate are omitted here to keep the comparison focused on the metrics most directly interpreted by drivers and evaluators.
 
 | Metric | Fixed-Time | RL | Δ% RL vs Fixed |
 |---|---:|---:|---:|
-| Steps | 8058 | 8375 | −3.9 % |
 | Avg Queue / Step | 3.14 | 2.54 | +19.1 % |
 | Avg Trip Duration (s) | 17.15 | 15.55 | +9.3 % |
 | Avg Waiting Time (s) | 8.70 | 7.04 | +19.1 % |
@@ -872,7 +871,7 @@ The table focuses on operational delay and queue metrics. Throughput was unchang
 
 ![Single-intersection RL change versus fixed-time](assets/final_results/single_intersection_result.svg)
 
-The single-intersection result is much cleaner than the corridor result: RL reduces queue, trip duration, waiting time, time loss, and maximum waiting time while preserving throughput. The only weaker metric is total clearance steps, meaning the RL run had a slightly longer tail after the main demand period. This supports the project narrative that isolated-intersection RL was feasible, while corridor-level RL introduced a harder coordination problem.
+The single-intersection result is much cleaner than the corridor result: RL reduces queue, trip duration, waiting time, time loss, and maximum waiting time while preserving throughput. This supports the project narrative that isolated-intersection RL was feasible, while corridor-level RL introduced a harder coordination problem.
 
 ### 19.4 Post-Redesign Corridor Results
 
@@ -907,7 +906,7 @@ Per-route waiting-time summary:
 | corridor_stress | 42 | 1804.58 | 1784.55 | 1717.60 | 6537.00 | 6608.00 |
 | corridor_stress | 43 | 2268.96 | 1610.62 | 1744.75 | 6539.00 | 6489.00 |
 
-![Average waiting time by scenario](assets/final_results/evaluation_wait_by_scenario.svg)
+![Average waiting time by scenario, excluding morning rush](assets/final_results/evaluation_wait_by_scenario.svg)
 
 Overall mean ± standard deviation across all 12 scenario/seed route files:
 
