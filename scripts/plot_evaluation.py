@@ -8,8 +8,8 @@ from pathlib import Path
 COLORS = {
     "fixed_time": "#4B5563",
     "max_pressure": "#2563EB",
-    "rl": "#059669",
-    "good": "#059669",
+    "rl": "#377684",
+    "good": "#377684",
     "bad": "#DC2626",
     "neutral": "#6B7280",
 }
