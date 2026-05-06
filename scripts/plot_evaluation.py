@@ -146,7 +146,6 @@ def plot_wait_summary_table(data, output):
     scenario_order = [
         ("corridor_stress", "Stress test"),
         ("evening_rush", "Rush hour"),
-        ("morning_rush", "Morning rush"),
         ("off_peak", "Off peak"),
     ]
     controller_keys = ["fixed_time", "max_pressure", "rl"]
@@ -170,26 +169,24 @@ def plot_wait_summary_table(data, output):
         delta = ((fixed - rl) / fixed) * 100
         rows.append((label, values, delta, controller_names[best]))
 
-    overall = data["overall_mean_std"]["avg_waiting_time"]
-    overall_values = {}
-    for controller, key in [
-        ("fixed_time", "fixed_time"),
-        ("max_pressure", "max_pressure"),
-        ("rl", "rl"),
-    ]:
-        mean_text = overall[key].split("+/-")[0].strip()
-        overall_values[controller] = float(mean_text)
-    overall_best = min(overall_values, key=overall_values.get)
+    shown_values = {
+        controller: sum(row[1][controller] for row in rows) / len(rows)
+        for controller in controller_keys
+    }
+    shown_best = min(shown_values, key=shown_values.get)
+    shown_delta = (
+        (shown_values["fixed_time"] - shown_values["rl"]) / shown_values["fixed_time"]
+    ) * 100
     rows.append(
         (
-            "Overall mean",
-            overall_values,
-            overall["delta_rl_vs_fixed_percent"],
-            controller_names[overall_best],
+            "Shown mean",
+            shown_values,
+            shown_delta,
+            controller_names[shown_best],
         )
     )
 
-    width, height = 1080, 520
+    width, height = 1080, 460
     x0, y0 = 54, 82
     row_h = 62
     col_widths = [230, 150, 170, 130, 160, 170]
@@ -235,7 +232,7 @@ def plot_wait_summary_table(data, output):
     for r, (scenario, values, delta, best) in enumerate(rows):
         y = y0 + row_h * (r + 1)
         fill = "#F9FAFB" if r % 2 == 0 else "#FFFFFF"
-        if scenario == "Overall mean":
+        if scenario == "Shown mean":
             fill = "#F1F5F4"
         body.append(
             f'<rect x="{x0}" y="{y}" width="{sum(col_widths)}" height="{row_h}" fill="{fill}"/>'

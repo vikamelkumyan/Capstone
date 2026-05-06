@@ -907,7 +907,7 @@ Per-route waiting-time summary:
 | corridor_stress | 42 | 1804.58 | 1784.55 | 1717.60 | 6537.00 | 6608.00 |
 | corridor_stress | 43 | 2268.96 | 1610.62 | 1744.75 | 6539.00 | 6489.00 |
 
-The scenario-level table below is the main waiting-time summary. It averages the three seeds for each traffic scenario and reports positive `RL vs Fixed` values when RL lowers average vehicle waiting time.
+The scenario-level table below is the main waiting-time summary for the displayed traffic scenarios. It averages the three seeds for each scenario and reports positive `RL vs Fixed` values when RL lowers average vehicle waiting time.
 
 ![Multi-intersection average vehicle waiting-time summary](assets/final_results/evaluation_wait_summary_table.svg)
 
