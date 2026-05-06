@@ -142,6 +142,144 @@ def plot_wait_by_scenario(data, output):
     write_svg(output, width, height, body)
 
 
+def plot_wait_summary_table(data, output):
+    scenario_order = [
+        ("corridor_stress", "Stress test"),
+        ("evening_rush", "Rush hour"),
+        ("morning_rush", "Morning rush"),
+        ("off_peak", "Off peak"),
+    ]
+    controller_keys = ["fixed_time", "max_pressure", "rl"]
+    controller_names = {
+        "fixed_time": "Fixed-Time",
+        "max_pressure": "MaxPressure",
+        "rl": "RL",
+    }
+    means = {
+        (row["scenario"], row["controller"]): row["avg_wait"]
+        for row in data["per_scenario_means"]
+    }
+    rows = []
+    for scenario, label in scenario_order:
+        fixed = means[(scenario, "fixed_time")]
+        rl = means[(scenario, "rl")]
+        values = {
+            controller: means[(scenario, controller)] for controller in controller_keys
+        }
+        best = min(values, key=values.get)
+        delta = ((fixed - rl) / fixed) * 100
+        rows.append((label, values, delta, controller_names[best]))
+
+    overall = data["overall_mean_std"]["avg_waiting_time"]
+    overall_values = {}
+    for controller, key in [
+        ("fixed_time", "fixed_time"),
+        ("max_pressure", "max_pressure"),
+        ("rl", "rl"),
+    ]:
+        mean_text = overall[key].split("+/-")[0].strip()
+        overall_values[controller] = float(mean_text)
+    overall_best = min(overall_values, key=overall_values.get)
+    rows.append(
+        (
+            "Overall mean",
+            overall_values,
+            overall["delta_rl_vs_fixed_percent"],
+            controller_names[overall_best],
+        )
+    )
+
+    width, height = 1080, 520
+    x0, y0 = 54, 82
+    row_h = 62
+    col_widths = [230, 150, 170, 130, 160, 170]
+    headers = [
+        "Scenario",
+        "Fixed-Time",
+        "MaxPressure",
+        "RL",
+        "RL vs Fixed",
+        "Best Avg Wait",
+    ]
+    aligns = ["start", "end", "end", "end", "end", "start"]
+    col_x = [x0]
+    for width_i in col_widths[:-1]:
+        col_x.append(col_x[-1] + width_i)
+
+    body = [
+        svg_text(
+            width / 2,
+            36,
+            "Multi-Intersection Average Vehicle Waiting Time",
+            23,
+            "middle",
+            "700",
+        ),
+        svg_text(
+            width / 2,
+            60,
+            "Mean seconds per vehicle across seeds 41-43. Lower values are better.",
+            13,
+            "middle",
+            "400",
+            "#374151",
+        ),
+        f'<rect x="{x0}" y="{y0}" width="{sum(col_widths)}" height="{row_h}" fill="#111827" rx="8"/>',
+    ]
+
+    for i, header in enumerate(headers):
+        anchor = aligns[i]
+        x = col_x[i] + (16 if anchor == "start" else col_widths[i] - 16)
+        body.append(svg_text(x, y0 + 39, header, 14, anchor, "700", "#FFFFFF"))
+
+    for r, (scenario, values, delta, best) in enumerate(rows):
+        y = y0 + row_h * (r + 1)
+        fill = "#F9FAFB" if r % 2 == 0 else "#FFFFFF"
+        if scenario == "Overall mean":
+            fill = "#F1F5F4"
+        body.append(
+            f'<rect x="{x0}" y="{y}" width="{sum(col_widths)}" height="{row_h}" fill="{fill}"/>'
+        )
+        body.append(
+            f'<line x1="{x0}" y1="{y + row_h}" x2="{x0 + sum(col_widths)}" y2="{y + row_h}" stroke="#E5E7EB"/>'
+        )
+
+        fixed = values["fixed_time"]
+        max_pressure = values["max_pressure"]
+        rl = values["rl"]
+        delta_color = COLORS["good"] if delta >= 0 else COLORS["bad"]
+        best_color = COLORS["rl"] if best == "RL" else COLORS["max_pressure"]
+        if best == "Fixed-Time":
+            best_color = COLORS["fixed_time"]
+
+        cell_values = [
+            scenario,
+            f"{fixed:.1f} s",
+            f"{max_pressure:.1f} s",
+            f"{rl:.1f} s",
+            f"{delta:+.1f} %",
+            best,
+        ]
+        for c, value in enumerate(cell_values):
+            anchor = aligns[c]
+            x = col_x[c] + (16 if anchor == "start" else col_widths[c] - 16)
+            weight = "700" if c in {0, 3, 4, 5} else "500"
+            color = "#111827"
+            if c == 3:
+                color = COLORS["rl"]
+            elif c == 4:
+                color = delta_color
+            elif c == 5:
+                color = best_color
+            body.append(svg_text(x, y + 39, value, 15, anchor, weight, color))
+
+    table_h = row_h * (len(rows) + 1)
+    body.append(
+        f'<rect x="{x0}" y="{y0}" width="{sum(col_widths)}" height="{table_h}" fill="none" stroke="#D1D5DB" rx="8"/>'
+    )
+    write_svg(output, width, height, body)
+
+
 def plot_overall_delta(data, output):
     ordered = [
         ("avg_queue_per_step", "Avg Queue / Step"),
@@ -306,6 +444,7 @@ def main():
 
     data = json.loads(summary_path.read_text(encoding="utf-8"))
     plot_wait_by_scenario(data, output_dir / "evaluation_wait_by_scenario.svg")
+    plot_wait_summary_table(data, output_dir / "evaluation_wait_summary_table.svg")
     plot_overall_delta(data, output_dir / "evaluation_delta_vs_fixed.svg")
     plot_policy_diagnostics(data, output_dir / "policy_diagnostics.svg")
 

@@ -757,6 +757,7 @@ This writes generated training plots under `runs/v3/plots/`. The final submissio
 - `docs/assets/final_results/training_overview.png` — reward, loss, and epsilon together
 - `docs/assets/final_results/reward_by_scenario.png` — reward separated by demand scenario
 - `docs/assets/final_results/loss_by_scenario.png` — loss separated by demand scenario
+- `docs/assets/final_results/evaluation_wait_summary_table.svg` — multi-intersection average vehicle waiting-time summary table
 - `docs/assets/final_results/evaluation_wait_by_scenario.svg` — average waiting time by scenario and controller, excluding `morning_rush`
 - `docs/assets/final_results/evaluation_delta_vs_fixed.svg` — final RL percentage change relative to fixed-time, excluding throughput and lane-wait diagnostics
 - `docs/assets/final_results/policy_diagnostics.svg` — dominant-action diagnostics for each controlled traffic light
@@ -905,6 +906,10 @@ Per-route waiting-time summary:
 | corridor_stress | 41 | 1946.71 | 1664.69 | 1680.95 | 6840.00 | 6600.00 |
 | corridor_stress | 42 | 1804.58 | 1784.55 | 1717.60 | 6537.00 | 6608.00 |
 | corridor_stress | 43 | 2268.96 | 1610.62 | 1744.75 | 6539.00 | 6489.00 |
+
+The scenario-level table below is the main waiting-time summary. It averages the three seeds for each traffic scenario and reports positive `RL vs Fixed` values when RL lowers average vehicle waiting time.
+
+![Multi-intersection average vehicle waiting-time summary](assets/final_results/evaluation_wait_summary_table.svg)
 
 ![Average waiting time by scenario, excluding morning rush](assets/final_results/evaluation_wait_by_scenario.svg)
 
