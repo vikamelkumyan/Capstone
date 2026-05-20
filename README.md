@@ -189,7 +189,7 @@ Model: `dqn_single.pth`, evaluated on the preserved single-intersection setup.
 | Avg Time Loss | 12.27 s | 10.67 s | +13.0% |
 | Max Waiting Time | 139.0 s | 48.0 s | +65.5% |
 
-Throughput was preserved (2719 vehicles arrived in both cases). The 65.5% reduction in worst-case waiting time confirms the agent eliminated the starvation of low-demand approaches that plagues fixed-time schedules.
+The 65.5% reduction in worst-case waiting time confirms the agent eliminated the starvation of low-demand approaches that plagues fixed-time schedules.
 
 ### Multi-Intersection — Komitas Corridor (averaged across scenarios and seeds)
 
@@ -203,4 +203,4 @@ Model: `dqn_multi_ep075.pth` — episode 75 of 500, chosen by multi-scenario wei
 | Avg Time Loss | 811.30 s | 790.42 s | 761.13 s | +6.2% |
 | Max Waiting Time | 4288.50 s | 5445.83 s | 3515.83 s | +18.0% |
 
-RL outperforms both baselines on Rush Hour and Off-Peak demand. The throughput gap under Corridor Stress (−6.5% vehicles arrived vs fixed-time) is the main open limitation.
+RL outperforms both baselines on Rush Hour and Off-Peak demand.
