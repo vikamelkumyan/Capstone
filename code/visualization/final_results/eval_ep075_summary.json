@@ -1,5 +1,5 @@
 {
-  "model_path": "models/komitas_dqn_ep075.pth",
+  "model_path": "code/models/komitas_multi_intersection_dqn_ep075.pth",
   "source": "Final reported batch evaluation for checkpoint_ep075, copied into submission assets.",
   "scenarios": [
     "morning_rush",

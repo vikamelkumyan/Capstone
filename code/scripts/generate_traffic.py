@@ -7,7 +7,7 @@ from collections import defaultdict, deque
 from functools import lru_cache
 from pathlib import Path
 
-DEFAULT_NET_FILE = "sumo_data/komitas.net.xml"
+DEFAULT_NET_FILE = "data/raw_data/sumo_data/komitas.net.xml"
 
 PORTALS = {
     "Gyulbenkyan-West": {"edge": "23635021#5", "direction": "west"},
@@ -309,7 +309,7 @@ def parse_args():
     )
     parser.add_argument(
         "--output",
-        default="sumo_data/routes.rou.xml",
+        default="data/raw_data/sumo_data/routes.rou.xml",
         help="Output path for the generated SUMO route file.",
     )
     parser.add_argument(

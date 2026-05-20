@@ -206,7 +206,7 @@ def main():
     log_path = Path(args.log_csv)
     if not log_path.exists():
         print(f"Log file not found: {log_path}")
-        print("Run training with: python train.py --log-csv training_log.csv")
+        print("Run training with: python code/train.py --log-csv training_log.csv")
         return
 
     rows = read_log(log_path)

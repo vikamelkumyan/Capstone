@@ -16,7 +16,7 @@ import traci
 
 from scripts.generate_traffic import SCENARIOS, generate_route_file
 
-SUMO_CONFIG = "sumo_data/komitas.sumocfg"
+SUMO_CONFIG = "data/raw_data/sumo_data/komitas.sumocfg"
 SUMO_BINARY = os.environ.get("SUMO_BINARY", "sumo")
 CONTROLLED_TLS_IDS = [
     "Komitas-Gyulbenkyan",

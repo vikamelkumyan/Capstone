@@ -15,19 +15,45 @@ Each controlled intersection has its own local DQN policy, and all six run toget
 
 ## Repository Layout
 
-- [train.py](train.py:1): multi-intersection training entrypoint
-- [evaluate.py](evaluate.py:1): fixed-time vs MaxPressure vs RL comparison
-- [test_sim.py](test_sim.py:1): GUI visualization of the trained controller
-- [batch_evaluate.py](batch_evaluate.py:1): evaluation across multiple scenarios and seeds
-- [run_final_training.py](run_final_training.py:1): checkpoint-based final training and selection
-- [scripts/generate_traffic.py](scripts/generate_traffic.py:1): demand generation using trips plus `duarouter`
-- [scripts/inspect_network.py](scripts/inspect_network.py:1): SUMO traffic-light inspection utility
-- [models/komitas_dqn_ep075.pth](models/komitas_dqn_ep075.pth): selected final DQN model bundle
-- [sumo_data/komitas.net.xml](sumo_data/komitas.net.xml:1): active Komitas network
-- [sumo_data/komitas.sumocfg](sumo_data/komitas.sumocfg:1): active SUMO config
-- [sumo_data/routes.rou.xml](sumo_data/routes.rou.xml:1): active route demand
+```text
+capstone_project/
+├── paper/
+│   ├── main.tex
+│   ├── references.bib
+│   ├── paper.pdf
+│   └── img/
+├── code/
+│   ├── train.py
+│   ├── evaluate.py
+│   ├── batch_evaluate.py
+│   ├── scripts/
+│   ├── models/
+│   └── visualization/
+├── data/
+│   ├── raw_data/
+│   └── processed_data/
+├── README.md
+└── SUBMISSION.md
+```
 
-Legacy single-intersection Vagharshyan assets are preserved under `sumo_data/legacy_single_intersection/` for project history and comparison. The active code defaults to the Komitas multi-intersection setup.
+- [code/train.py](code/train.py:1): multi-intersection training entrypoint
+- [code/evaluate.py](code/evaluate.py:1): fixed-time vs MaxPressure vs RL comparison
+- [code/test_sim.py](code/test_sim.py:1): GUI visualization of the trained controller
+- [code/batch_evaluate.py](code/batch_evaluate.py:1): evaluation across multiple scenarios and seeds
+- [code/run_final_training.py](code/run_final_training.py:1): checkpoint-based final training and selection
+- [code/scripts/reproduce_results.py](code/scripts/reproduce_results.py:1): one-command reproduction of final figures/results
+- [code/scripts/generate_traffic.py](code/scripts/generate_traffic.py:1): demand generation using trips plus `duarouter`
+- [code/scripts/plot_training.py](code/scripts/plot_training.py:1): training-curve visualization
+- [code/scripts/plot_evaluation.py](code/scripts/plot_evaluation.py:1): evaluation-figure visualization
+- [code/models/komitas_multi_intersection_dqn_ep075.pth](code/models/komitas_multi_intersection_dqn_ep075.pth): selected final DQN model bundle
+- [data/raw_data/sumo_data/komitas.net.xml](data/raw_data/sumo_data/komitas.net.xml:1): active Komitas network
+- [data/raw_data/sumo_data/komitas.sumocfg](data/raw_data/sumo_data/komitas.sumocfg:1): active SUMO config
+- [data/raw_data/sumo_data/routes.rou.xml](data/raw_data/sumo_data/routes.rou.xml:1): active route demand
+- [code/models/komitas_single_intersection_dqn.pth](code/models/komitas_single_intersection_dqn.pth): legacy single-intersection checkpoint behind the historical reference plot
+- [requirements.txt](requirements.txt:1): Python package requirements
+- [SUBMISSION.md](SUBMISSION.md:1): capstone submission and reproducibility checklist
+
+Legacy single-intersection Vagharshyan assets are preserved under `data/raw_data/sumo_data/legacy_single_intersection/` for project history and comparison. The active code defaults to the Komitas multi-intersection setup.
 
 ## Requirements
 
@@ -56,6 +82,23 @@ Optional:
 pre-commit install
 ```
 
+## One-Command Reproduction
+
+Run this command from the repository root to regenerate the final plots used by
+the report from the committed final training log and evaluation summary:
+
+```bash
+python code/scripts/reproduce_results.py
+```
+
+For a full SUMO simulation rerun of the reported evaluation grid, use:
+
+```bash
+python code/scripts/reproduce_results.py --run-evaluation
+```
+
+The full rerun requires Eclipse SUMO with `sumo` and `duarouter` on `PATH`.
+
 ## Main Workflow
 
 Run commands from the repository root.
@@ -63,12 +106,12 @@ Run commands from the repository root.
 ### 1. Generate or refresh demand
 
 ```bash
-./.venv/bin/python scripts/generate_traffic.py \
+./.venv/bin/python code/scripts/generate_traffic.py \
   --scenario morning_rush \
   --seed 42 \
   --steps 3600 \
-  --output sumo_data/routes.rou.xml \
-  --net-file sumo_data/komitas.net.xml
+  --output data/raw_data/sumo_data/routes.rou.xml \
+  --net-file data/raw_data/sumo_data/komitas.net.xml
 ```
 
 The script writes trips first, then uses `duarouter` to compute valid full routes on the Komitas network.
@@ -76,19 +119,19 @@ The script writes trips first, then uses `duarouter` to compute valid full route
 For a heavier congestion test, use the built-in corridor stress profile or scale demand upward:
 
 ```bash
-./.venv/bin/python scripts/generate_traffic.py \
+./.venv/bin/python code/scripts/generate_traffic.py \
   --scenario corridor_stress \
   --demand-scale 1.2 \
   --seed 42 \
   --steps 3600 \
-  --output sumo_data/routes.rou.xml \
-  --net-file sumo_data/komitas.net.xml
+  --output data/raw_data/sumo_data/routes.rou.xml \
+  --net-file data/raw_data/sumo_data/komitas.net.xml
 ```
 
 ### 2. Train
 
 ```bash
-./.venv/bin/python train.py
+./.venv/bin/python code/train.py
 ```
 
 Training runs headless with `sumo` by default. It generates multiple traffic scenarios, trains on a balanced scenario/seed schedule, saves periodic checkpoints, and saves the final model bundle to `dqn_model.pth` unless another `--model-path` is provided.
@@ -96,7 +139,7 @@ Training runs headless with `sumo` by default. It generates multiple traffic sce
 Example training run used for the current best result:
 
 ```bash
-./.venv/bin/python train.py \
+./.venv/bin/python code/train.py \
   --episodes 200 \
   --decisions-per-episode 720 \
   --checkpoint-every 25 \
@@ -109,13 +152,13 @@ Example training run used for the current best result:
 Quick smoke test:
 
 ```bash
-./.venv/bin/python train.py --episodes 1 --decisions-per-episode 1
+./.venv/bin/python code/train.py --episodes 1 --decisions-per-episode 1
 ```
 
 ### 3. Visual test
 
 ```bash
-./.venv/bin/python test_sim.py
+./.venv/bin/python code/test_sim.py
 ```
 
 This opens `sumo-gui` and prints the per-intersection local states, Q-values, and chosen actions.
@@ -123,13 +166,13 @@ This opens `sumo-gui` and prints the per-intersection local states, Q-values, an
 Useful options:
 
 ```bash
-./.venv/bin/python test_sim.py --route-file sumo_data/routes.rou.xml --decisions 100 --render-delay 0.25
+./.venv/bin/python code/test_sim.py --route-file data/raw_data/sumo_data/routes.rou.xml --decisions 100 --render-delay 0.25
 ```
 
 ### 4. Baseline vs RL comparison
 
 ```bash
-./.venv/bin/python evaluate.py
+./.venv/bin/python code/evaluate.py
 ```
 
 This runs:
@@ -143,7 +186,7 @@ and prints a side-by-side metric table.
 ### 5. Multi-scenario batch evaluation
 
 ```bash
-./.venv/bin/python batch_evaluate.py
+./.venv/bin/python code/batch_evaluate.py
 ```
 
 This generates a scenario/seed grid, runs fixed-time, MaxPressure, and RL on every route file, and prints:
@@ -156,8 +199,8 @@ This generates a scenario/seed grid, runs fixed-time, MaxPressure, and RL on eve
 Example:
 
 ```bash
-./.venv/bin/python batch_evaluate.py \
-  --model-path models/komitas_dqn_ep075.pth \
+./.venv/bin/python code/batch_evaluate.py \
+  --model-path code/models/komitas_multi_intersection_dqn_ep075.pth \
   --scenarios morning_rush evening_rush off_peak corridor_stress \
   --seeds 41 42 43 \
   --steps 3600 \
@@ -168,7 +211,7 @@ Example:
 ### 6. Checkpoint-based final training
 
 ```bash
-./.venv/bin/python run_final_training.py
+./.venv/bin/python code/run_final_training.py
 ```
 
 This workflow:
@@ -197,7 +240,7 @@ This is a hybrid design: RL chooses local actions, while timing safety rules rem
 
 ## Current Evaluation Result
 
-The selected final model is [models/komitas_dqn_ep075.pth](models/komitas_dqn_ep075.pth), selected from multi-scenario evaluation across four demand profiles and three seeds (`41`, `42`, `43`). Against the fixed-time baseline, this checkpoint improves average queue, trip duration, waiting time, time loss, and worst-case waiting time, while still arriving fewer vehicles overall.
+The selected final model is [code/models/komitas_multi_intersection_dqn_ep075.pth](code/models/komitas_multi_intersection_dqn_ep075.pth), selected from multi-scenario evaluation across four demand profiles and three seeds (`41`, `42`, `43`). Against the fixed-time baseline, this checkpoint improves average queue, trip duration, waiting time, time loss, and worst-case waiting time, while still arriving fewer vehicles overall.
 
 | Metric | Fixed-Time | MaxPressure | RL | Delta vs Fixed |
 |---|---:|---:|---:|---:|
@@ -214,20 +257,28 @@ Scenario-level behavior is mixed: RL performs strongly on `evening_rush` and `of
 
 Current defaults:
 
-- config: [sumo_data/komitas.sumocfg](sumo_data/komitas.sumocfg:1)
-- network: [sumo_data/komitas.net.xml](sumo_data/komitas.net.xml:1)
-- route file: [sumo_data/routes.rou.xml](sumo_data/routes.rou.xml:1)
-- legacy single-intersection files: [sumo_data/legacy_single_intersection/](sumo_data/legacy_single_intersection/README.md:1)
+- config: [data/raw_data/sumo_data/komitas.sumocfg](data/raw_data/sumo_data/komitas.sumocfg:1)
+- network: [data/raw_data/sumo_data/komitas.net.xml](data/raw_data/sumo_data/komitas.net.xml:1)
+- route file: [data/raw_data/sumo_data/routes.rou.xml](data/raw_data/sumo_data/routes.rou.xml:1)
+- legacy single-intersection files: [data/raw_data/sumo_data/legacy_single_intersection/](data/raw_data/sumo_data/legacy_single_intersection/README.md:1)
+
+Final reported result assets:
+
+- training log: [code/visualization/final_results/training_log_v3.csv](code/visualization/final_results/training_log_v3.csv:1)
+- evaluation summary: [code/visualization/final_results/eval_ep075_summary.json](code/visualization/final_results/eval_ep075_summary.json:1)
+- generated figures: [code/visualization/final_results/](code/visualization/final_results/training_overview.png)
+- paper source: [paper/main.tex](paper/main.tex:1)
+- references: [paper/references.bib](paper/references.bib:1)
+- report PDF: [paper/paper.pdf](paper/paper.pdf)
 
 ## Notes
 
-- `train.py` uses headless `sumo`; `test_sim.py` uses `sumo-gui`
+- `code/train.py` uses headless `sumo`; `code/test_sim.py` uses `sumo-gui`
 - route generation now depends on `duarouter`
 - generated artifacts such as checkpoints, training routes, and `*.rou.alt.xml` files are ignored by git
-- final report assets are stored under `docs/assets/final_results/`
+- generated code/result visuals are stored under `code/visualization/`, so `paper/` can be replaced independently
 
 ## More Documentation
 
-- [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md:1): complete capstone paper and final report source
-- [docs/RL_OVERVIEW.md](docs/RL_OVERVIEW.md:1)
-- [docs/PIPELINE.md](docs/PIPELINE.md:1)
+- [paper/main.tex](paper/main.tex:1): LaTeX paper source
+- [paper/references.bib](paper/references.bib:1): BibTeX references

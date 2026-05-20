@@ -403,9 +403,10 @@ def plot_policy_diagnostics(data, output):
 def main():
     parser = argparse.ArgumentParser(description="Generate final evaluation SVG plots.")
     parser.add_argument(
-        "--summary-json", default="docs/assets/final_results/eval_ep075_summary.json"
+        "--summary-json",
+        default="code/visualization/final_results/eval_ep075_summary.json",
     )
-    parser.add_argument("--output-dir", default="docs/assets/final_results")
+    parser.add_argument("--output-dir", default="code/visualization/final_results")
     args = parser.parse_args()
 
     summary_path = Path(args.summary_json)
