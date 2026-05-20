@@ -1,4 +1,4 @@
-# Traffic Signal Control with Double DQN — Komitas Corridor
+# Reinforcement Learning for Adaptive Traffic Signal Control on the Komitas Avenue
 
 A Double DQN agent that controls six traffic lights along the Komitas Avenue corridor in Yerevan using [SUMO](https://eclipse.dev/sumo/) and TraCI. Each intersection runs its own local policy; coordination is implicit through neighbor corridor features in the state vector. Against a fixed-time baseline across Rush Hour, Off-Peak, and Corridor Stress demand profiles, the trained agent reduces average waiting time by 5.9% and worst-case waiting time by 18%.
 
