@@ -1,0 +1,22 @@
+{
+  "baseline": {
+    "steps": 8058,
+    "arrived_vehicles": 2719,
+    "avg_queue_per_step": 3.1415984115165054,
+    "avg_lane_wait_per_step": 104.90729709605361,
+    "avg_trip_duration": 17.154100772342773,
+    "avg_waiting_time": 8.704670834865759,
+    "avg_time_loss": 12.266031629275476,
+    "max_waiting_time": 139.0
+  },
+  "rl": {
+    "steps": 8375,
+    "arrived_vehicles": 2719,
+    "avg_queue_per_step": 2.5432835820895523,
+    "avg_lane_wait_per_step": 18.880835820895523,
+    "avg_trip_duration": 15.55424788525193,
+    "avg_waiting_time": 7.035674880470761,
+    "avg_time_loss": 10.665649135711643,
+    "max_waiting_time": 48.0
+  }
+}

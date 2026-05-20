@@ -6,14 +6,25 @@ __pycache__/
 .DS_Store
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 .coverage
 
 # Output/Model files
 q_table.npy
 *.npy
+*.pth
+!models/
+!models/*.pth
+!code/models/
+!code/models/**/*.pth
 dqn_model.pth
 dqn_model_final*.pth
 checkpoints/
+runs/
 training_routes/
 batch_eval_routes/
 sumo_data/trips.trips.xml
+*.rou.alt.xml
+training_log.csv
+training_curve.png
+logs/

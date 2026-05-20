@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560">
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<text x="490.0" y="38" font-family="Arial, sans-serif" font-size="26" font-weight="700" text-anchor="middle" fill="#111827">Multi-Intersection Average Vehicle Waiting Time by Scenario</text>
+<line x1="90" y1="470.0" x2="950" y2="470.0" stroke="#E5E7EB"/>
+<text x="78" y="475.0" font-family="Arial, sans-serif" font-size="15" font-weight="400" text-anchor="end" fill="#374151">0</text>
+<line x1="90" y1="379.1" x2="950" y2="379.1" stroke="#E5E7EB"/>
+<text x="78" y="384.0909090909091" font-family="Arial, sans-serif" font-size="15" font-weight="400" text-anchor="end" fill="#374151">500</text>
+<line x1="90" y1="288.2" x2="950" y2="288.2" stroke="#E5E7EB"/>
+<text x="78" y="293.1818181818182" font-family="Arial, sans-serif" font-size="15" font-weight="400" text-anchor="end" fill="#374151">1000</text>
+<line x1="90" y1="197.3" x2="950" y2="197.3" stroke="#E5E7EB"/>
+<text x="78" y="202.2727272727273" font-family="Arial, sans-serif" font-size="15" font-weight="400" text-anchor="end" fill="#374151">1500</text>
+<line x1="90" y1="106.4" x2="950" y2="106.4" stroke="#E5E7EB"/>
+<text x="78" y="111.36363636363637" font-family="Arial, sans-serif" font-size="15" font-weight="400" text-anchor="end" fill="#374151">2000</text>
+<line x1="90" y1="70" x2="90" y2="470" stroke="#111827"/>
+<line x1="90" y1="470" x2="950" y2="470" stroke="#111827"/>
+<text x="233.33333333333334" y="508" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#111827">stress test</text>
+<rect x="170.3" y="105.1" width="42" height="364.9" fill="#8B2F2F" rx="3"/>
+<text x="191.33333333333334" y="98.14545454545453" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">2007</text>
+<rect x="220.3" y="163.3" width="42" height="306.7" fill="#5B78A7" rx="3"/>
+<text x="241.33333333333334" y="156.34545454545457" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">1687</text>
+<rect x="270.3" y="158.3" width="42" height="311.7" fill="#377684" rx="3"/>
+<text x="291.33333333333337" y="151.29090909090905" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">1714</text>
+<text x="520.0" y="508" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#111827">rush hour</text>
+<rect x="457.0" y="425.5" width="42" height="44.5" fill="#8B2F2F" rx="3"/>
+<text x="478.0" y="418.5090909090909" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">245</text>
+<rect x="507.0" y="433.2" width="42" height="36.8" fill="#5B78A7" rx="3"/>
+<text x="528.0" y="426.1636363636364" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">203</text>
+<rect x="557.0" y="446.1" width="42" height="23.9" fill="#377684" rx="3"/>
+<text x="578.0" y="439.07272727272726" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">132</text>
+<text x="806.6666666666667" y="508" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#111827">off peak</text>
+<rect x="743.7" y="463.8" width="42" height="6.2" fill="#8B2F2F" rx="3"/>
+<text x="764.6666666666667" y="456.8363636363636" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">34</text>
+<rect x="793.7" y="429.8" width="42" height="40.2" fill="#5B78A7" rx="3"/>
+<text x="814.6666666666667" y="422.8" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">221</text>
+<rect x="843.7" y="464.4" width="42" height="5.6" fill="#377684" rx="3"/>
+<text x="864.6666666666667" y="457.4" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827">31</text>
+<rect x="90" y="521" width="14" height="14" fill="#8B2F2F" rx="2"/>
+<text x="110" y="534" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#111827">Fixed-Time</text>
+<rect x="240" y="521" width="14" height="14" fill="#5B78A7" rx="2"/>
+<text x="260" y="534" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#111827">MaxPressure</text>
+<rect x="390" y="521" width="14" height="14" fill="#377684" rx="2"/>
+<text x="410" y="534" font-family="Arial, sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#111827">RL</text>
+<text x="24" y="270.0" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#111827" transform="rotate(-90 24 270.0)">Seconds</text>
+</svg>

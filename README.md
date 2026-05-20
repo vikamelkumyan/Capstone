@@ -1,150 +1,177 @@
-# Traffic Signal Control with DQN (SUMO + TraCI)
+# Traffic Signal Control with Double DQN — Komitas Corridor
 
-This repository trains and evaluates a Deep Q-Network (DQN) traffic light controller for the Komitas-Vagharshyan intersection using Eclipse SUMO and TraCI.
+A Double DQN agent that controls six traffic lights along the Komitas Avenue corridor in Yerevan using [SUMO](https://eclipse.dev/sumo/) and TraCI. Each intersection runs its own local policy; coordination is implicit through neighbor corridor features in the state vector. Against a fixed-time baseline across Rush Hour, Off-Peak, and Corridor Stress demand profiles, the trained agent reduces average waiting time by 5.9% and worst-case waiting time by 18%.
 
-The repository is organized so a reviewer can reproduce the milestone directly from the tracked SUMO network, tracked route file, and the Python scripts in the root.
+## Reproduce Results
 
-## What is in the repository
-
-- `train.py`: trains the DQN controller and saves the weights to `dqn_model.pth`
-- `test_sim.py`: loads `dqn_model.pth` and runs the controller in SUMO GUI mode
-- `sumo_data/`: SUMO network, routes, and simulation configuration
-- `scripts/`: helper scripts for inspecting the traffic light setup and generated traffic
-- `requirements.txt`: Python dependencies for a fresh environment
-
-## Requirements
-
-- Python 3.10+
-- Eclipse SUMO installed with `sumo` and `sumo-gui` available on `PATH`
-- `SUMO_HOME` set correctly
-- Python packages: `torch`, `traci`, `numpy`
-
-On macOS, SUMO can be installed with:
+No SUMO installation required to regenerate the reported figures:
 
 ```bash
-brew install sumo
+python code/scripts/reproduce.py
+```
+
+To rerun the full SUMO simulations before plotting (requires Eclipse SUMO):
+
+```bash
+python code/scripts/reproduce.py --run-evaluation
+```
+
+## Repository Layout
+
+```text
+├── code/
+│   ├── train.py                 # training entrypoint
+│   ├── train_final.py           # checkpoint training + selection
+│   ├── evaluate.py              # fixed-time vs MaxPressure vs RL
+│   ├── evaluate_batch.py        # multi-scenario batch evaluation
+│   ├── evaluate_single.py       # legacy single-intersection evaluation
+│   ├── visualize.py             # SUMO GUI inspection
+│   ├── models/
+│   │   ├── dqn_multi_ep075.pth  # selected final multi-intersection model
+│   │   └── dqn_single.pth       # legacy single-intersection model
+│   ├── scripts/
+│   │   ├── reproduce.py         # one-command reproduction
+│   │   ├── generate_traffic.py  # demand generation via duarouter
+│   │   ├── plot_training.py
+│   │   ├── plot_evaluation.py
+│   │   └── plot_single.py
+│   └── visualization/final_results/
+│       ├── training_log.csv
+│       ├── evaluation_summary.json
+│       └── evaluation_summary_single.json
+├── data/
+│   ├── raw_data/sumo_data/      # SUMO network, config, routes
+│   └── processed_data/
+├── paper/                       # LaTeX source, references, PDF
+└── requirements.txt
 ```
 
 ## Setup
 
-If you want to create a fresh virtual environment:
-
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## How to run
+**Requirements:** Python 3.10+. Eclipse SUMO (`sumo`, `sumo-gui`, `duarouter`) is only required for training and full simulation reruns — not for reproducing figures.
 
-Run commands from the repository root.
+On macOS: `brew install sumo`
 
-### 1. Train the model
+## Workflow
 
-```bash
-./.venv/bin/python train.py
-```
+All commands assume the venv is active and are run from the repo root.
 
-This starts SUMO, samples from multiple generated traffic scenarios during training, and writes the trained weights to `dqn_model.pth`.
-Training runs headless by default, uses fixed seeds for reproducibility, and can generate per-episode route files under `training_routes/`.
-
-### 2. Test the trained model
+### 1. Generate demand
 
 ```bash
-./.venv/bin/python test_sim.py
+python code/scripts/generate_traffic.py \
+  --scenario off_peak --seed 42 --steps 3600 \
+  --output data/raw_data/sumo_data/routes.rou.xml \
+  --net-file data/raw_data/sumo_data/komitas.net.xml
 ```
 
-This opens `sumo-gui`, loads `dqn_model.pth`, and runs the trained controller while printing each decision to the terminal.
-The current controller can either extend the active green or switch directly to one of the valid green phases, while still respecting minimum-green and synthesized yellow-transition logic.
-You can also override the model, route file, decision count, and GUI speed:
+Available scenarios: `off_peak`, `rush_hour`, `corridor_stress`. Use `--demand-scale` to amplify volume.
+
+### 2. Train
 
 ```bash
-./.venv/bin/python test_sim.py --route-file sumo_data/routes.rou.xml --decisions 150 --render-delay 0.25
+python code/train.py
 ```
 
-### 3. Evaluate RL against the default SUMO controller
+Trains headless, round-robin across scenarios and seeds, saves periodic checkpoints. Key options:
 
 ```bash
-./.venv/bin/python evaluate.py
+python code/train.py \
+  --episodes 200 \
+  --decisions-per-episode 720 \
+  --checkpoint-every 25 \
+  --checkpoint-dir runs/checkpoints \
+  --log-csv runs/training_log.csv
 ```
 
-This runs the same scenario twice in headless SUMO:
+Smoke test: `python code/train.py --episodes 1 --decisions-per-episode 1`
 
-- once with the default built-in traffic light program
-- once with the trained RL controller
-
-It then prints side-by-side metrics such as average queue, waiting time, trip duration, and time loss.
-
-### 4. Final training with checkpoint selection
+### 3. Evaluate
 
 ```bash
-./.venv/bin/python run_final_training.py
+python code/evaluate.py        # fixed-time vs MaxPressure vs RL, single scenario
+python code/evaluate_batch.py  # full scenario/seed grid with summary table
 ```
 
-This does the full milestone-selection loop:
-
-- trains for `200` episodes
-- saves checkpoints every `10` episodes
-- trains on multiple generated traffic scenarios per episode
-- generates multiple evaluation traffic scenarios
-- evaluates every checkpoint with `evaluate.py` logic
-- picks the checkpoint with the best average cross-scenario score
-
-### 5. Batch evaluation across multiple scenarios
+Batch evaluation with explicit model and output:
 
 ```bash
-./.venv/bin/python batch_evaluate.py
+python code/evaluate_batch.py \
+  --model-path code/models/dqn_multi_ep075.pth \
+  --scenarios rush_hour off_peak corridor_stress \
+  --seeds 41 42 43 \
+  --summary-json runs/evaluation_summary.json
 ```
 
-This generates a grid of evaluation route files, runs baseline and RL on each one, and prints:
-
-- a per-route summary
-- one averaged comparison table across all scenarios and seeds
-
-Example:
+### 4. Checkpoint selection
 
 ```bash
-./.venv/bin/python batch_evaluate.py --scenarios morning_rush evening_rush off_peak --seeds 41 42 43 --summary-json checkpoints/batch_eval_summary.json
+python code/train_final.py
 ```
+
+Trains with periodic checkpoints, evaluates each across scenarios, and ranks by weighted score.
+
+### 5. GUI inspection
+
+```bash
+python code/visualize.py
+python code/visualize.py --route-file data/raw_data/sumo_data/routes.rou.xml --decisions 100 --render-delay 0.25
+```
+
+### 6. Legacy single-intersection
+
+```bash
+python code/evaluate_single.py
+python code/evaluate_single.py \
+  --json-output code/visualization/final_results/evaluation_summary_single.json
+```
+
+Uses the preserved Komitas-Vagharshyan single-intersection SUMO files under `data/raw_data/sumo_data/legacy_single_intersection/`.
+
+## Controller Design
+
+One local Double DQN per intersection (128 → 128 → action_dim MLP). Six intersections run simultaneously: `Komitas-Gyulbenkyan`, `Komitas-Vagharshyan`, `Komitas-Papazyan`, `Komitas-Vracakan`, `Komitas-Griboyedov`, `Komitas-Tigranyan`.
+
+**State** (`k + 13` dims): per-phase queue pressures, elapsed green ratio, phase cycle position, local queue / wait / spillback, network load, and three features each for the upstream and downstream neighbor.
+
+**Actions:** extend current green or switch to any valid green phase. Switches before `MIN_GREEN = 10 s` are masked.
+
+**Reward:** PressLight-style pressure terms plus a starvation guard (ramps sharply when any lane exceeds 20 s wait) and a demand-scaled switch penalty (suppresses thrashing under low demand). A per-episode demand normalizer equalizes gradient magnitudes across scenarios.
+
+**Training:** 400 episodes, round-robin scenario schedule (seeds 41–43), replay buffer 100k, Adam lr = 3e-4, gradient clip norm = 10, ε decays over the first 85% of episodes.
 
 ## Results
 
-Results now depend on the selected training and evaluation artifacts. The recommended workflow is:
+### Single Intersection — Komitas-Vagharshyan (Rush Hour)
 
-1. run `./.venv/bin/python run_final_training.py`
-2. inspect the generated leaderboard in `checkpoints/final_training_v2/checkpoint_summary.json`
-3. run `./.venv/bin/python batch_evaluate.py --model-path <best-checkpoint>`
-4. use the averaged multi-scenario results for final comparison and reporting
+Model: `dqn_single.pth`, evaluated on the preserved single-intersection setup.
 
-This avoids hard-coding stale numbers in the README when the training setup changes.
+| Metric | Fixed-Time | RL | Improvement |
+|---|---:|---:|---:|
+| Avg Queue / Step | 3.14 | 2.54 | +19.1% |
+| Avg Trip Duration | 17.15 s | 15.55 s | +9.3% |
+| Avg Waiting Time | 8.70 s | 7.04 s | +19.1% |
+| Avg Time Loss | 12.27 s | 10.67 s | +13.0% |
+| Max Waiting Time | 139.0 s | 48.0 s | +65.5% |
 
-## Controller Summary
+Throughput was preserved (2719 vehicles arrived in both cases). The 65.5% reduction in worst-case waiting time confirms the agent eliminated the starvation of low-demand approaches that plagues fixed-time schedules.
 
-The current RL controller:
+### Multi-Intersection — Komitas Corridor (averaged across scenarios and seeds)
 
-- observes queue demand for the five valid green phases plus timing context
-- can extend the current green or request a specific next green phase
-- inserts a pair-specific yellow transition synthesized from the current and target green states
-- still enforces `MIN_GREEN` and `MAX_GREEN`
+Model: `dqn_multi_ep075.pth` — episode 75 of 500, chosen by multi-scenario weighted evaluation score.
 
-This gives the agent more useful control authority than a simple fixed-cycle extend/switch controller while keeping signal changes constrained.
+| Metric | Fixed-Time | MaxPressure | RL | Improvement |
+|---|---:|---:|---:|---:|
+| Avg Queue / Step | 16.02 | 13.80 | 14.55 | +9.2% |
+| Avg Trip Duration | 908.96 s | 890.21 s | 858.76 s | +5.5% |
+| Avg Waiting Time | 722.44 s | 708.48 s | 679.79 s | +5.9% |
+| Avg Time Loss | 811.30 s | 790.42 s | 761.13 s | +6.2% |
+| Max Waiting Time | 4288.50 s | 5445.83 s | 3515.83 s | +18.0% |
 
-## Useful notes
-
-- `train.py` uses headless `sumo` by default. `test_sim.py` uses `sumo-gui` for visualization.
-- If you want to override the SUMO binary, set `SUMO_BINARY` before running:
-
-```bash
-SUMO_BINARY=sumo ./.venv/bin/python train.py
-```
-
-- `test_sim.py` requires `dqn_model.pth`. Train first if the file does not exist.
-- The main SUMO config is `sumo_data/komitas-vagharshyan.sumocfg`.
-- The tracked `sumo_data/komitas-vagharshyan.net.xml` and `sumo_data/routes.rou.xml` files are intentional submission assets, not temporary build output.
-
-## Helper scripts
-
-- `./.venv/bin/python scripts/inspect_tls.py`: print traffic light IDs and phase states
-- `./.venv/bin/python scripts/check_tls.py`: verify the configured traffic light mapping
-- `./.venv/bin/python scripts/analyze_phases.py`: inspect phase behavior
-- `./.venv/bin/python scripts/generate_traffic.py --scenario morning_rush`: regenerate route demand data deterministically if needed
+RL outperforms both baselines on Rush Hour and Off-Peak demand. The throughput gap under Corridor Stress (−6.5% vehicles arrived vs fixed-time) is the main open limitation.
