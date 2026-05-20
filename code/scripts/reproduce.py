@@ -14,9 +14,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FINAL_ASSETS = ROOT / "code" / "visualization" / "final_results"
-DEFAULT_MODEL = ROOT / "code" / "models" / "komitas_multi_intersection_dqn_ep075.pth"
-DEFAULT_SUMMARY = FINAL_ASSETS / "eval_ep075_summary.json"
-DEFAULT_TRAINING_LOG = FINAL_ASSETS / "training_log_v3.csv"
+DEFAULT_MODEL = ROOT / "code" / "models" / "dqn_multi_ep075.pth"
+DEFAULT_SUMMARY = FINAL_ASSETS / "evaluation_summary.json"
+DEFAULT_TRAINING_LOG = FINAL_ASSETS / "training_log.csv"
+DEFAULT_SINGLE_SUMMARY = FINAL_ASSETS / "evaluation_summary_single.json"
 
 
 def run(cmd):
@@ -56,7 +57,7 @@ def parse_args():
         "--run-evaluation",
         action="store_true",
         help=(
-            "Rerun batch_evaluate.py across the reported scenario/seed grid. "
+            "Rerun evaluate_batch.py across the reported scenario/seed grid. "
             "This can take a long time and requires SUMO."
         ),
     )
@@ -80,6 +81,11 @@ def parse_args():
         default=str(FINAL_ASSETS),
         help="Directory where reproduced figures are written.",
     )
+    parser.add_argument(
+        "--single-summary-json",
+        default=str(DEFAULT_SINGLE_SUMMARY),
+        help=("Legacy single-intersection summary JSON used by " "plot_single.py."),
+    )
     return parser.parse_args()
 
 
@@ -89,10 +95,12 @@ def main():
     summary_json = Path(args.summary_json)
     training_log = Path(args.training_log)
     model_path = Path(args.model_path)
+    single_summary_json = Path(args.single_summary_json)
 
     check_environment(require_sumo=args.run_evaluation)
     require_file(training_log, "final training log")
     require_file(model_path, "trained DQN model")
+    require_file(single_summary_json, "legacy single-intersection summary")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -100,12 +108,11 @@ def main():
         run(
             [
                 sys.executable,
-                "code/batch_evaluate.py",
+                "code/evaluate_batch.py",
                 "--model-path",
                 str(model_path),
                 "--scenarios",
-                "morning_rush",
-                "evening_rush",
+                "rush_hour",
                 "off_peak",
                 "corridor_stress",
                 "--seeds",
@@ -145,6 +152,16 @@ def main():
             str(summary_json),
             "--output-dir",
             str(output_dir),
+        ]
+    )
+    run(
+        [
+            sys.executable,
+            "code/scripts/plot_single.py",
+            "--summary-json",
+            str(single_summary_json),
+            "--output",
+            str(output_dir / "single_intersection_result.svg"),
         ]
     )
 

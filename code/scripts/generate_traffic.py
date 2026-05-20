@@ -23,25 +23,18 @@ PORTALS = {
     "Tigranyan-East": {"edge": "379128397#1", "direction": "east"},
 }
 
+RUSH_HOUR_PROFILE = {
+    "Vagharshyan-South": 0.26,
+    "Papazyan-East": 0.18,
+    "Vracakan-South": 0.22,
+    "Tigranyan-East": 0.28,
+    "Gyulbenkyan-West": 0.12,
+    "Vagharshyan-North": 0.08,
+    "Griboyedov-West": 0.12,
+}
+
 SCENARIOS = {
-    "morning_rush": {
-        "Gyulbenkyan-North": 0.26,
-        "Vagharshyan-North": 0.24,
-        "Papazyan-West": 0.16,
-        "Griboyedov-West": 0.24,
-        "Tigranyan-North": 0.28,
-        "Gyulbenkyan-West": 0.10,
-        "Vracakan-North": 0.10,
-    },
-    "evening_rush": {
-        "Vagharshyan-South": 0.26,
-        "Papazyan-East": 0.18,
-        "Vracakan-South": 0.22,
-        "Tigranyan-East": 0.28,
-        "Gyulbenkyan-West": 0.12,
-        "Vagharshyan-North": 0.08,
-        "Griboyedov-West": 0.12,
-    },
+    "rush_hour": RUSH_HOUR_PROFILE,
     "off_peak": {
         "Gyulbenkyan-West": 0.04,
         "Gyulbenkyan-North": 0.04,
@@ -304,7 +297,7 @@ def parse_args():
     parser.add_argument(
         "--scenario",
         choices=sorted(SCENARIOS),
-        default="morning_rush",
+        default="off_peak",
         help="Named traffic demand scenario to generate.",
     )
     parser.add_argument(

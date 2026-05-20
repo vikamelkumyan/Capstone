@@ -43,13 +43,30 @@ def controller_label(controller):
     }[controller]
 
 
+def scenario_label(scenario):
+    return {
+        "corridor_stress": "Corridor Stress",
+        "evening_rush": "Rush Hour",
+        "rush_hour": "Rush Hour",
+        "off_peak": "Off-Peak",
+    }.get(scenario, scenario.replace("_", " ").title())
+
+
+def scenario_key(data, preferred, fallback=None):
+    available = {row["scenario"] for row in data["per_scenario_means"]}
+    if preferred in available:
+        return preferred
+    if fallback in available:
+        return fallback
+    return preferred
+
+
 def plot_wait_by_scenario(data, output):
-    scenarios = ["corridor_stress", "evening_rush", "off_peak"]
-    scenario_labels = {
-        "corridor_stress": "stress test",
-        "evening_rush": "rush hour",
-        "off_peak": "off peak",
-    }
+    scenarios = [
+        "corridor_stress",
+        scenario_key(data, "rush_hour", "evening_rush"),
+        "off_peak",
+    ]
     controllers = ["fixed_time", "max_pressure", "rl"]
     means = {
         (row["scenario"], row["controller"]): row["avg_wait"]
@@ -98,7 +115,7 @@ def plot_wait_by_scenario(data, output):
     for i, scenario in enumerate(scenarios):
         group_x = margin_left + i * group_w
         center = group_x + group_w / 2
-        label = scenario_labels[scenario]
+        label = scenario_label(scenario)
         body.append(
             svg_text(center, margin_top + chart_h + 38, label, 17, "middle", "700")
         )
@@ -144,9 +161,12 @@ def plot_wait_by_scenario(data, output):
 
 def plot_wait_summary_table(data, output):
     scenario_order = [
-        ("corridor_stress", "Stress test"),
-        ("evening_rush", "Rush hour"),
-        ("off_peak", "Off peak"),
+        ("corridor_stress", scenario_label("corridor_stress")),
+        (
+            scenario_key(data, "rush_hour", "evening_rush"),
+            scenario_label("rush_hour"),
+        ),
+        ("off_peak", scenario_label("off_peak")),
     ]
     controller_keys = ["fixed_time", "max_pressure", "rl"]
     controller_names = {
@@ -404,7 +424,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate final evaluation SVG plots.")
     parser.add_argument(
         "--summary-json",
-        default="code/visualization/final_results/eval_ep075_summary.json",
+        default="code/visualization/final_results/evaluation_summary.json",
     )
     parser.add_argument("--output-dir", default="code/visualization/final_results")
     args = parser.parse_args()

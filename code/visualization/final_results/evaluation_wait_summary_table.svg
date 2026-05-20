@@ -10,7 +10,7 @@
 <text x="910" y="122" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="start" fill="#FFFFFF">Best Avg Wait</text>
 <rect x="54" y="144" width="1010" height="62" fill="#F9FAFB"/>
 <line x1="54" y1="206" x2="1064" y2="206" stroke="#E5E7EB"/>
-<text x="70" y="184" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#111827">Stress test</text>
+<text x="70" y="184" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#111827">Corridor Stress</text>
 <text x="418" y="184" font-family="Arial, sans-serif" font-size="17" font-weight="500" text-anchor="end" fill="#111827">2006.7 s</text>
 <text x="588" y="184" font-family="Arial, sans-serif" font-size="17" font-weight="500" text-anchor="end" fill="#111827">1686.6 s</text>
 <text x="718" y="184" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="end" fill="#377684">1714.4 s</text>
@@ -18,7 +18,7 @@
 <text x="910" y="184" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#5B78A7">MaxPressure</text>
 <rect x="54" y="206" width="1010" height="62" fill="#FFFFFF"/>
 <line x1="54" y1="268" x2="1064" y2="268" stroke="#E5E7EB"/>
-<text x="70" y="246" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#111827">Rush hour</text>
+<text x="70" y="246" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#111827">Rush Hour</text>
 <text x="418" y="246" font-family="Arial, sans-serif" font-size="17" font-weight="500" text-anchor="end" fill="#111827">244.7 s</text>
 <text x="588" y="246" font-family="Arial, sans-serif" font-size="17" font-weight="500" text-anchor="end" fill="#111827">202.6 s</text>
 <text x="718" y="246" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="end" fill="#377684">131.6 s</text>
@@ -26,7 +26,7 @@
 <text x="910" y="246" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#377684">RL</text>
 <rect x="54" y="268" width="1010" height="62" fill="#F9FAFB"/>
 <line x1="54" y1="330" x2="1064" y2="330" stroke="#E5E7EB"/>
-<text x="70" y="308" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#111827">Off peak</text>
+<text x="70" y="308" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="start" fill="#111827">Off-Peak</text>
 <text x="418" y="308" font-family="Arial, sans-serif" font-size="17" font-weight="500" text-anchor="end" fill="#111827">33.9 s</text>
 <text x="588" y="308" font-family="Arial, sans-serif" font-size="17" font-weight="500" text-anchor="end" fill="#111827">221.1 s</text>
 <text x="718" y="308" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="end" fill="#377684">30.8 s</text>

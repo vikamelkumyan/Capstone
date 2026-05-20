@@ -14,36 +14,37 @@
 
   <line x1="210" y1="80" x2="210" y2="390" stroke="#E5E7EB"/>
   <text x="210" y="412" text-anchor="middle" class="tick">0%</text>
-  <line x1="318.5" y1="80" x2="318.5" y2="390" stroke="#E5E7EB"/>
-  <text x="318.5" y="412" text-anchor="middle" class="tick">10%</text>
-  <line x1="427" y1="80" x2="427" y2="390" stroke="#E5E7EB"/>
-  <text x="427" y="412" text-anchor="middle" class="tick">20%</text>
-  <line x1="535.5" y1="80" x2="535.5" y2="390" stroke="#E5E7EB"/>
-  <text x="535.5" y="412" text-anchor="middle" class="tick">30%</text>
-  <line x1="644" y1="80" x2="644" y2="390" stroke="#E5E7EB"/>
-  <text x="644" y="412" text-anchor="middle" class="tick">40%</text>
-  <line x1="752.5" y1="80" x2="752.5" y2="390" stroke="#E5E7EB"/>
-  <text x="752.5" y="412" text-anchor="middle" class="tick">50%</text>
-  <line x1="861" y1="80" x2="861" y2="390" stroke="#E5E7EB"/>
-  <text x="861" y="412" text-anchor="middle" class="tick">60%</text>
+  <line x1="328.333" y1="80" x2="328.333" y2="390" stroke="#E5E7EB"/>
+  <text x="328.333" y="412" text-anchor="middle" class="tick">10%</text>
+  <line x1="446.667" y1="80" x2="446.667" y2="390" stroke="#E5E7EB"/>
+  <text x="446.667" y="412" text-anchor="middle" class="tick">20%</text>
+  <line x1="565" y1="80" x2="565" y2="390" stroke="#E5E7EB"/>
+  <text x="565" y="412" text-anchor="middle" class="tick">30%</text>
+  <line x1="683.333" y1="80" x2="683.333" y2="390" stroke="#E5E7EB"/>
+  <text x="683.333" y="412" text-anchor="middle" class="tick">40%</text>
+  <line x1="801.667" y1="80" x2="801.667" y2="390" stroke="#E5E7EB"/>
+  <text x="801.667" y="412" text-anchor="middle" class="tick">50%</text>
+  <line x1="920" y1="80" x2="920" y2="390" stroke="#E5E7EB"/>
+  <text x="920" y="412" text-anchor="middle" class="tick">60%</text>
 
   <text x="194" y="123" text-anchor="end" class="label">Avg Queue / Step</text>
-  <rect x="210" y="105" width="207.2" height="28" fill="#377684" rx="3"/>
-  <text x="425.2" y="124" text-anchor="start" class="value">+19.1%</text>
+  <rect x="210" y="105" width="225.4" height="28" fill="#377684" rx="3"/>
+  <text x="443.4" y="124" text-anchor="start" class="value">+19.0%</text>
 
   <text x="194" y="183" text-anchor="end" class="label">Avg Trip Duration</text>
-  <rect x="210" y="165" width="100.9" height="28" fill="#377684" rx="3"/>
-  <text x="318.9" y="184" text-anchor="start" class="value">+9.3%</text>
+  <rect x="210" y="165" width="110.4" height="28" fill="#377684" rx="3"/>
+  <text x="328.4" y="184" text-anchor="start" class="value">+9.3%</text>
 
   <text x="194" y="243" text-anchor="end" class="label">Avg Waiting Time</text>
-  <rect x="210" y="225" width="207.2" height="28" fill="#377684" rx="3"/>
-  <text x="425.2" y="244" text-anchor="start" class="value">+19.1%</text>
+  <rect x="210" y="225" width="226.9" height="28" fill="#377684" rx="3"/>
+  <text x="444.9" y="244" text-anchor="start" class="value">+19.2%</text>
 
   <text x="194" y="303" text-anchor="end" class="label">Avg Time Loss</text>
-  <rect x="210" y="285" width="141.1" height="28" fill="#377684" rx="3"/>
-  <text x="359.1" y="304" text-anchor="start" class="value">+13.0%</text>
+  <rect x="210" y="285" width="154.4" height="28" fill="#377684" rx="3"/>
+  <text x="372.4" y="304" text-anchor="start" class="value">+13.0%</text>
 
   <text x="194" y="363" text-anchor="end" class="label">Max Waiting Time</text>
   <rect x="210" y="345" width="710.0" height="28" fill="#377684" rx="3"/>
-  <text x="928" y="364" text-anchor="end" class="value">+65.5%</text>
+  <text x="928.0" y="364" text-anchor="end" class="value">+65.5%</text>
+
 </svg>

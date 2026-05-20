@@ -17,8 +17,21 @@ def moving_average(values, window=10):
 
 
 def scenario_name(label):
-    """Extract scenario name from labels like 'morning_rush seed 42'."""
-    return label.split(" seed ", 1)[0].strip()
+    """Extract the raw scenario ID from labels like 'off_peak seed 42'."""
+    scenario = label.split(" seed ", 1)[0].strip()
+    return {
+        "morning_rush": "rush_hour",
+        "evening_rush": "rush_hour",
+    }.get(scenario, scenario)
+
+
+def scenario_label(scenario):
+    return {
+        "corridor_stress": "Corridor Stress",
+        "evening_rush": "Rush Hour",
+        "rush_hour": "Rush Hour",
+        "off_peak": "Off-Peak",
+    }.get(scenario, scenario.replace("_", " ").title())
 
 
 def read_log(log_path):
@@ -123,7 +136,7 @@ def save_scenario_reward_plot(rows, output_path, window, plt):
             linewidth=1.9,
             marker="o",
             markersize=2.5,
-            label=scenario,
+            label=scenario_label(scenario),
         )
 
     ax.set_title("Average Reward by Scenario")
@@ -157,7 +170,7 @@ def save_scenario_loss_plot(rows, output_path, window, plt):
             linewidth=1.9,
             marker="o",
             markersize=2.5,
-            label=scenario,
+            label=scenario_label(scenario),
         )
 
     ax.set_title("Average Loss by Scenario")

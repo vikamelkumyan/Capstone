@@ -6,6 +6,8 @@ from pathlib import Path
 from evaluate import evaluate_pair
 from scripts.generate_traffic import SCENARIOS, generate_route_file
 
+REPORTED_SCENARIOS = ["rush_hour", "off_peak", "corridor_stress"]
+
 
 def format_metric(value):
     if isinstance(value, float):
@@ -321,7 +323,7 @@ def parse_args():
         "--scenarios",
         nargs="+",
         choices=sorted(SCENARIOS),
-        default=sorted(SCENARIOS),
+        default=REPORTED_SCENARIOS,
         help="Traffic scenarios to evaluate.",
     )
     parser.add_argument(

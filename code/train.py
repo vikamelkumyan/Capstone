@@ -38,7 +38,8 @@ NEIGHBOR_TLS_IDS = {
 TLS_ID = CONTROLLED_TLS_IDS[0]
 MODEL_PATH = "dqn_model.pth"
 RANDOM_SEED = 42
-DEFAULT_TRAINING_SCENARIOS = sorted(SCENARIOS)
+REPORTED_SCENARIOS = ["rush_hour", "off_peak", "corridor_stress"]
+DEFAULT_TRAINING_SCENARIOS = REPORTED_SCENARIOS
 DEFAULT_TRAINING_SEEDS = [41, 42, 43]
 ACTION_EXTEND = 0
 REWARD_SCALE = 10.0
@@ -974,7 +975,7 @@ def train(
                     # gradients and the shared DQN overfits to heavy-traffic
                     # behavior. We divide by max(n_vehicles/50, 1.0):
                     #   - off_peak (~30 vehicles): divisor 1.0, no change
-                    #   - morning/evening_rush (~150): divisor 3.0
+                    #   - rush_hour (~150): divisor 3.0
                     #   - corridor_stress (~300): divisor 6.0
                     # Equalizes per-step gradient magnitude across scenarios while
                     # preserving relative action ordering within each scenario, so

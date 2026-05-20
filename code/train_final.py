@@ -6,6 +6,8 @@ from evaluate import evaluate_pair, run_default_controller
 from scripts.generate_traffic import SCENARIOS, generate_route_file
 from train import train
 
+REPORTED_SCENARIOS = ["rush_hour", "off_peak", "corridor_stress"]
+
 
 def checkpoint_sort_key(path):
     stem = path.stem
@@ -229,7 +231,7 @@ def parse_args():
         "--eval-scenarios",
         nargs="+",
         choices=sorted(SCENARIOS),
-        default=sorted(SCENARIOS),
+        default=REPORTED_SCENARIOS,
         help="Traffic scenarios used during checkpoint evaluation.",
     )
     parser.add_argument(
