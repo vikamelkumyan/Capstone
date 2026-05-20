@@ -48,15 +48,44 @@ python code/scripts/reproduce.py --run-evaluation
 
 ## Setup
 
+Clone the repository:
+
+```bash
+git clone https://github.com/vikamelkumyan/Capstone.git
+cd Capstone
+```
+
+Create a virtual environment and install dependencies:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**Requirements:** Python 3.10+. Eclipse SUMO (`sumo`, `sumo-gui`, `duarouter`) is only required for training and full simulation reruns — not for reproducing figures.
+**Python 3.10+** is required.
 
-On macOS: `brew install sumo`
+### SUMO (optional — only needed for training and simulation reruns)
+
+[Eclipse SUMO](https://eclipse.dev/sumo/) (Simulation of Urban MObility) is the traffic simulator this project runs inside. It models the road network, vehicles, and traffic light phases. The Python scripts communicate with it in real time via the TraCI API to observe queue states and apply signal changes during training and evaluation.
+
+**SUMO is not needed to reproduce the reported figures** — those are regenerated from committed JSON/CSV files. It is only required if you want to retrain the model or rerun the SUMO simulations from scratch.
+
+Installation:
+
+| Platform | Command |
+|---|---|
+| macOS | `brew install sumo` |
+| Ubuntu/Debian | `sudo apt install sumo sumo-tools` |
+| Windows | Download the installer from [sumo.dlr.de/docs/Downloads.php](https://sumo.dlr.de/docs/Downloads.php) |
+
+After installation, set the `SUMO_HOME` environment variable to the SUMO installation directory (the installer does this automatically on Windows; on macOS/Linux add it to your shell profile):
+
+```bash
+export SUMO_HOME="/usr/share/sumo"   # adjust path to your installation
+```
+
+Full installation guide: [sumo.dlr.de/docs/Installing](https://sumo.dlr.de/docs/Installing/index.html)
 
 ## Workflow
 
